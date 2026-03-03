@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 import re
+import ssl
 
 # Fallback to SQLite for local development 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./kordexlabs.db")
@@ -23,11 +24,16 @@ if DATABASE_URL.startswith("postgresql://") or DATABASE_URL.startswith("postgres
     # 3. Strip sslmode from URL using regex (asyncpg prefers connect_args)
     DATABASE_URL = re.sub(r'[?&]sslmode=[^&]*', '', DATABASE_URL)
 
-# PostgreSQL requires SSL for Supabase, but asyncpg uses 'ssl' instead of 'sslmode'
+# PostgreSQL requires SSL for Supabase, but asyncpg often fails with self-signed certs
+# in a pooled environment. We configure a custom SSL context to allow them.
 connect_args = {}
 if is_postgres:
-    connect_args["ssl"] = True
+    ctx = ssl.create_default_context()
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    connect_args["ssl"] = ctx
 else:
+    # SQLite settings
     connect_args["check_same_thread"] = False
 
 engine = create_async_engine(DATABASE_URL, connect_args=connect_args)
