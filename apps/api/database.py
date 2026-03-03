@@ -2,12 +2,16 @@ import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# Fallback to SQLite for local development
+import re
+
+# Fallback to SQLite for local development 
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./kordexlabs.db")
 
-import urllib.parse
+# 1. Clean up accidental brackets if user copied [PASSWORD] or similar
+if DATABASE_URL:
+    DATABASE_URL = DATABASE_URL.replace("[", "").replace("]", "")
 
-# If it's a Supabase/Postgres URL, ensure it uses the asyncpg driver
+# 2. Support PostgreSQL and ensure asyncpg driver
 is_postgres = False
 if DATABASE_URL.startswith("postgresql://") or DATABASE_URL.startswith("postgres://"):
     is_postgres = True
@@ -16,13 +20,8 @@ if DATABASE_URL.startswith("postgresql://") or DATABASE_URL.startswith("postgres
     else:
         DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
     
-    # Strip sslmode if present, it's not supported by asyncpg dialect directly in URL
-    url = urllib.parse.urlparse(DATABASE_URL)
-    query = urllib.parse.parse_qs(url.query)
-    query.pop("sslmode", None)
-    new_query = urllib.parse.urlencode(query, doseq=True)
-    url = url._replace(query=new_query)
-    DATABASE_URL = urllib.parse.urlunparse(url)
+    # 3. Strip sslmode from URL using regex (asyncpg prefers connect_args)
+    DATABASE_URL = re.sub(r'[?&]sslmode=[^&]*', '', DATABASE_URL)
 
 # PostgreSQL requires SSL for Supabase, but asyncpg uses 'ssl' instead of 'sslmode'
 connect_args = {}
