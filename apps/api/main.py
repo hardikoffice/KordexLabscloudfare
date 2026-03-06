@@ -15,9 +15,9 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "https://kordexlabs.vercel.app",
-        "https://*.vercel.app",
         "https://kordexlabs.onrender.com",
     ],
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
