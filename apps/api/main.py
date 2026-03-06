@@ -14,8 +14,9 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000",
-        "https://kordexlabs.vercel.app",  # Add your specific vercel domain if you have one
-        "https://*.vercel.app"
+        "https://kordexlabs.vercel.app",
+        "https://*.vercel.app",
+        "https://kordexlabs.onrender.com",
     ],
     allow_credentials=True,
     allow_methods=["*"],
