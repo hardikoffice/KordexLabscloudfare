@@ -1,18 +1,6 @@
 "use client";
 import { create } from "zustand";
 
-interface ThemeStore {
-  theme: "dark" | "light";
-  toggleTheme: () => void;
-  setTheme: (t: "dark" | "light") => void;
-}
-
-export const useThemeStore = create<ThemeStore>((set) => ({
-  theme: "dark",
-  toggleTheme: () =>
-    set((s) => ({ theme: s.theme === "dark" ? "light" : "dark" })),
-  setTheme: (t) => set({ theme: t }),
-}));
 
 interface DashboardStore {
   savedBlogs: string[];

@@ -3,8 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import ThemeProvider from "@/components/ThemeProvider";
-
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
@@ -23,13 +21,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${inter.variable} antialiased`} style={{ fontFamily: "'Inter', sans-serif" }}>
-        <ThemeProvider>
-          <Navbar />
-          <main className="pt-16 min-h-screen">
-            {children}
-          </main>
-          <Footer />
-        </ThemeProvider>
+        <Navbar />
+        <main className="pt-16 min-h-screen">
+          {children}
+        </main>
+        <Footer />
       </body>
     </html>
   );

@@ -1,9 +1,8 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useThemeStore } from "@/lib/store";
 import { useAuthStore } from "@/store/authStore";
-import { Sun, Moon, Menu, X, Zap, LogOut, User as UserIcon } from "lucide-react";
+import { Menu, X, Zap, LogOut, User as UserIcon } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -18,7 +17,6 @@ const navLinks = [
 export default function Navbar() {
     const pathname = usePathname();
     const router = useRouter();
-    const { theme, toggleTheme } = useThemeStore();
     const { user, isAuthenticated, logout } = useAuthStore();
     const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -59,17 +57,6 @@ export default function Navbar() {
 
                     {/* Right Side Actions */}
                     <div className="flex items-center gap-3">
-                        <button
-                            onClick={toggleTheme}
-                            className="p-2 rounded-lg hover:bg-[var(--surface-hover)] transition-colors"
-                            aria-label="Toggle theme"
-                        >
-                            {theme === "dark" ? (
-                                <Sun className="w-5 h-5 text-yellow-400" />
-                            ) : (
-                                <Moon className="w-5 h-5 text-[var(--primary)]" />
-                            )}
-                        </button>
 
                         <div className="hidden md:flex items-center gap-2 border-l border-[var(--card-border)] pl-3 ml-1">
                             {isAuthenticated ? (
