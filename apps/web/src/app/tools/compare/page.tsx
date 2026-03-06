@@ -3,10 +3,22 @@ import { tools } from "@/lib/data/tools";
 import { motion } from "framer-motion";
 import { ArrowLeft, Check, X } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
-export default function CompareToolsPage() {
-    const [selected, setSelected] = useState<string[]>(["1", "2", "4"]);
+function CompareToolsContent() {
+    const searchParams = useSearchParams();
+    const idsString = searchParams.get("ids");
+    const [selected, setSelected] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (idsString) {
+            setSelected(idsString.split(","));
+        } else {
+            // Default selection if no IDs are provided
+            setSelected(["1", "2", "4"]);
+        }
+    }, [idsString]);
 
     const toggleTool = (id: string) => {
         setSelected((prev) =>
@@ -155,5 +167,13 @@ export default function CompareToolsPage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function CompareToolsPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]">Loading...</div>}>
+            <CompareToolsContent />
+        </Suspense>
     );
 }

@@ -1,3 +1,6 @@
+export type PricingModel = 'Free' | 'Freemium' | 'Paid' | 'Enterprise';
+export type AccessType = 'Open Source' | 'Closed Source' | 'API Available';
+
 export interface AITool {
     id: string;
     name: string;
@@ -5,10 +8,18 @@ export interface AITool {
     pros: string[];
     cons: string[];
     pricing_tier: string;
+    pricing_model: PricingModel;
+    access_type: AccessType[];
     logo_url: string;
     description: string;
     use_cases: string[];
     limitations: string[];
+    parent_company?: string;
+    ticker?: string;
+    upvotes: number;
+    created_at: string;
+    priceMonthly?: number;
+    priceAnnual?: number;
 }
 
 export const tools: AITool[] = [
@@ -19,10 +30,18 @@ export const tools: AITool[] = [
         pros: ["Versatile", "Large plugin ecosystem", "Strong code generation", "Multimodal support"],
         cons: ["Can hallucinate", "Expensive at scale", "Rate limits on free tier"],
         pricing_tier: "Freemium — $20/mo Pro",
+        pricing_model: "Freemium",
+        access_type: ["Closed Source", "API Available"],
         logo_url: "https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg",
         description: "OpenAI's flagship conversational AI model, powered by GPT-5.",
         use_cases: ["Content creation", "Code assistance", "Research"],
         limitations: ["No real-time data", "Context window limits"],
+        parent_company: "OpenAI / Microsoft",
+        ticker: "MSFT",
+        upvotes: 12450,
+        created_at: "2023-11-30",
+        priceMonthly: 20,
+        priceAnnual: 16,
     },
     {
         id: "2",
@@ -31,10 +50,18 @@ export const tools: AITool[] = [
         pros: ["Massive context window (500K)", "Excellent safety", "Strong reasoning", "Code analysis"],
         cons: ["Slower than GPT-5", "Smaller ecosystem", "No image generation"],
         pricing_tier: "Freemium — $20/mo Pro",
+        pricing_model: "Freemium",
+        access_type: ["Closed Source", "API Available"],
         logo_url: "https://upload.wikimedia.org/wikipedia/commons/7/78/Anthropic_logo.svg",
         description: "Anthropic's AI assistant focused on safety and helpfulness.",
         use_cases: ["Document analysis", "Long-form writing", "Code review"],
         limitations: ["No web browsing", "Limited tool use"],
+        parent_company: "Anthropic / Amazon",
+        ticker: "AMZN",
+        upvotes: 8920,
+        created_at: "2024-03-04",
+        priceMonthly: 20,
+        priceAnnual: 18,
     },
     {
         id: "3",
@@ -43,10 +70,17 @@ export const tools: AITool[] = [
         pros: ["Stunning visual quality", "Strong artistic style", "Active community"],
         cons: ["Discord-only interface", "No API access", "Slow generation"],
         pricing_tier: "$10–$60/mo",
+        pricing_model: "Paid",
+        access_type: ["Closed Source"],
         logo_url: "https://upload.wikimedia.org/wikipedia/commons/e/e6/Midjourney_Emblem.png",
         description: "AI image generation tool known for its artistic and photorealistic outputs.",
         use_cases: ["Art creation", "Marketing visuals", "Concept design"],
         limitations: ["No text rendering", "Inconsistent hands/faces"],
+        parent_company: "Midjourney Inc.",
+        upvotes: 15600,
+        created_at: "2023-07-12",
+        priceMonthly: 10,
+        priceAnnual: 8,
     },
     {
         id: "4",
@@ -55,10 +89,18 @@ export const tools: AITool[] = [
         pros: ["Deep IDE integration", "Multi-language support", "Workspace context", "Fast suggestions"],
         cons: ["Subscription required", "Can suggest insecure code", "Privacy concerns"],
         pricing_tier: "$10/mo Individual",
+        pricing_model: "Paid",
+        access_type: ["Closed Source"],
         logo_url: "https://github.githubassets.com/images/modules/site/copilot/copilot.png",
         description: "AI pair programmer integrated directly into your editor.",
         use_cases: ["Code completion", "Test generation", "Documentation"],
         limitations: ["Needs good context", "Language-dependent quality"],
+        parent_company: "Microsoft",
+        ticker: "MSFT",
+        upvotes: 11200,
+        created_at: "2023-06-21",
+        priceMonthly: 10,
+        priceAnnual: 10,
     },
     {
         id: "5",
@@ -67,10 +109,17 @@ export const tools: AITool[] = [
         pros: ["Text-to-video", "Motion brush", "Professional quality", "Web-based"],
         cons: ["Expensive credits", "Short clip length", "Watermarks on free tier"],
         pricing_tier: "Freemium — $12–$76/mo",
+        pricing_model: "Freemium",
+        access_type: ["Closed Source", "API Available"],
         logo_url: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Runway_company_logo.png",
         description: "AI-powered creative tools for video generation and editing.",
         use_cases: ["Video production", "Special effects", "Prototyping"],
         limitations: ["4-second clips", "Limited control over output"],
+        parent_company: "Runway AI Inc.",
+        upvotes: 7450,
+        created_at: "2024-01-15",
+        priceMonthly: 12,
+        priceAnnual: 12,
     },
     {
         id: "6",
@@ -79,10 +128,17 @@ export const tools: AITool[] = [
         pros: ["Massive model hub", "Open source", "Great community", "Free inference API"],
         cons: ["Steep learning curve", "Variable model quality", "Compute costs for fine-tuning"],
         pricing_tier: "Free — Pro $9/mo",
+        pricing_model: "Freemium",
+        access_type: ["Open Source", "API Available"],
         logo_url: "https://huggingface.co/front/assets/huggingface_logo.svg",
         description: "The GitHub of machine learning — hosting models, datasets, and spaces.",
         use_cases: ["Model hosting", "Fine-tuning", "Dataset management"],
         limitations: ["Requires ML knowledge", "Inference speed varies"],
+        parent_company: "Hugging Face Inc.",
+        upvotes: 13400,
+        created_at: "2022-10-01",
+        priceMonthly: 9,
+        priceAnnual: 9,
     },
     {
         id: "7",
@@ -91,10 +147,17 @@ export const tools: AITool[] = [
         pros: ["Integrated with Notion workspace", "Writing assistance", "Summarization", "Easy to use"],
         cons: ["Limited to Notion ecosystem", "Basic compared to dedicated LLMs", "Add-on cost"],
         pricing_tier: "$10/mo add-on",
+        pricing_model: "Paid",
+        access_type: ["Closed Source"],
         logo_url: "https://upload.wikimedia.org/wikipedia/commons/4/45/Notion_app_logo.png",
         description: "AI writing and brainstorming assistant built into the Notion workspace.",
         use_cases: ["Note-taking", "Document drafting", "Meeting summaries"],
         limitations: ["Notion-only", "No code generation", "No image creation"],
+        parent_company: "Notion Labs Inc.",
+        upvotes: 6200,
+        created_at: "2024-02-22",
+        priceMonthly: 10,
+        priceAnnual: 8,
     },
     {
         id: "8",
@@ -103,9 +166,16 @@ export const tools: AITool[] = [
         pros: ["Real-time web search", "Source citations", "Clean interface", "Focus modes"],
         cons: ["Limited free queries", "Can misinterpret complex queries", "No file upload on free"],
         pricing_tier: "Freemium — $20/mo Pro",
+        pricing_model: "Freemium",
+        access_type: ["Closed Source", "API Available"],
         logo_url: "https://upload.wikimedia.org/wikipedia/commons/1/1f/Perplexity_AI_logo.png",
         description: "AI-powered answer engine that searches the web and cites its sources.",
         use_cases: ["Research", "Fact-checking", "Academic writing"],
         limitations: ["Rate limits", "Occasional outdated sources"],
+        parent_company: "Perplexity AI Inc.",
+        upvotes: 9800,
+        created_at: "2024-05-10",
+        priceMonthly: 20,
+        priceAnnual: 20,
     },
 ];
