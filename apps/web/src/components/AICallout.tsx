@@ -13,7 +13,7 @@ export default function AICallout() {
 
     useEffect(() => {
         // Check if the user has already dismissed the callout in this browser session
-        const isDismissed = localStorage.getItem(STORAGE_KEY);
+        const isDismissed = sessionStorage.getItem(STORAGE_KEY);
 
         if (!isDismissed) {
             setShouldRender(true);
@@ -27,7 +27,7 @@ export default function AICallout() {
 
     const handleDismiss = () => {
         setIsVisible(false);
-        localStorage.setItem(STORAGE_KEY, "true");
+        sessionStorage.setItem(STORAGE_KEY, "true");
     };
 
     if (!shouldRender) return null;
