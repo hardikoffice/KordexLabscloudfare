@@ -3,10 +3,8 @@ import { useNotificationStore } from "@/store/notificationStore";
 
 interface DashboardStore {
   savedBlogs: string[];
-  pinnedTools: string[];
   favoriteStocks: string[];
   toggleSavedBlog: (id: string) => Promise<void>;
-  togglePinnedTool: (id: string) => void;
   toggleFavoriteStock: (ticker: string) => Promise<void>;
   fetchFavorites: () => Promise<void>;
   fetchSavedBlogs: () => Promise<void>;
@@ -16,7 +14,6 @@ const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000") + 
 
 export const useDashboardStore = create<DashboardStore>((set, get) => ({
   savedBlogs: [],
-  pinnedTools: ["1", "4"],
   favoriteStocks: [],
   fetchFavorites: async () => {
     try {
@@ -100,12 +97,6 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
       addNotification("Network error. Please try again.", "error");
     }
   },
-  togglePinnedTool: (id) =>
-    set((s) => ({
-      pinnedTools: s.pinnedTools.includes(id)
-        ? s.pinnedTools.filter((t) => t !== id)
-        : [...s.pinnedTools, id],
-    })),
   toggleFavoriteStock: async (ticker) => {
     const isFav = get().favoriteStocks.includes(ticker);
     const authData = localStorage.getItem('auth-storage');

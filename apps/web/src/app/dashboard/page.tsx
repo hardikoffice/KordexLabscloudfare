@@ -1,22 +1,20 @@
 "use client";
 import { useDashboardStore } from "@/lib/store";
 import { blogs } from "@/lib/data/blogs";
-import { tools } from "@/lib/data/tools";
 import { stocks } from "@/lib/data/stocks";
 import { motion } from "framer-motion";
-import { BookOpen, Cpu, TrendingUp, TrendingDown, Pin, Heart, Bookmark, Star } from "lucide-react";
+import { BookOpen, Cpu, TrendingUp, TrendingDown, Heart, Bookmark, Star } from "lucide-react";
 import Link from "next/link";
 import { useEffect } from "react";
 
 export default function DashboardPage() {
-    const { savedBlogs, pinnedTools, favoriteStocks, toggleSavedBlog, togglePinnedTool, toggleFavoriteStock, fetchFavorites, fetchSavedBlogs } = useDashboardStore();
+    const { savedBlogs, favoriteStocks, toggleSavedBlog, toggleFavoriteStock, fetchFavorites, fetchSavedBlogs } = useDashboardStore();
 
     useEffect(() => {
         fetchFavorites();
         fetchSavedBlogs();
     }, [fetchFavorites, fetchSavedBlogs]);
     const userBlogs = blogs.filter((b) => savedBlogs.includes(b.id));
-    const userTools = tools.filter((t) => pinnedTools.includes(t.id));
     const userStocks = stocks.filter((s) => favoriteStocks.includes(s.ticker));
 
     return (
@@ -104,44 +102,12 @@ export default function DashboardPage() {
                     )}
                 </motion.div>
 
-                {/* Pinned Tools */}
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.3 }}
-                    className="glass-card p-6"
-                >
-                    <div className="flex items-center gap-2 mb-4">
-                        <Pin className="w-5 h-5 text-[var(--accent)]" />
-                        <h2 className="font-bold text-lg">Pinned Tools</h2>
-                    </div>
-                    {userTools.length > 0 ? (
-                        <div className="space-y-3">
-                            {userTools.map((t) => (
-                                <div key={t.id} className="flex items-center gap-3 p-3 rounded-xl bg-[var(--surface)] hover:bg-[var(--surface-hover)] transition-colors">
-                                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
-                                        {t.name.charAt(0)}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-medium text-sm">{t.name}</p>
-                                        <p className="text-xs text-[var(--muted-foreground)]">{t.category}</p>
-                                    </div>
-                                    <button onClick={() => togglePinnedTool(t.id)} className="p-1.5 rounded-lg hover:bg-[var(--card-border)] transition-colors flex-shrink-0">
-                                        <Pin className="w-4 h-4 text-[var(--accent)] fill-[var(--accent)]" />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-[var(--muted-foreground)] text-sm">No pinned tools yet.</p>
-                    )}
-                </motion.div>
 
                 {/* Quick Links */}
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.4 }}
+                    transition={{ delay: 0.3 }}
                     className="glass-card p-6"
                 >
                     <h2 className="font-bold text-lg mb-4">Quick Links</h2>
