@@ -136,11 +136,22 @@ function TrendingBlogs() {
   );
 }
 
+import { useState, useEffect } from "react";
+
 function ToolOfTheWeek() {
-  const tool = tools[3]; // GitHub Copilot
+  const [toolIndex, setToolIndex] = useState(0);
+
+  useEffect(() => {
+    // Calculate a stable index based on the date
+    const day = Math.floor(Date.now() / (1000 * 60 * 60 * 24));
+    setToolIndex(day % tools.length);
+  }, []);
+
+  const tool = tools[toolIndex];
+
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <h2 className="text-2xl md:text-3xl font-bold mb-8">🏆 Tool of the Week</h2>
+      <h2 className="text-2xl md:text-3xl font-bold mb-8">🏆 Tool of the Day</h2>
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         whileInView={{ opacity: 1, scale: 1 }}
@@ -156,14 +167,14 @@ function ToolOfTheWeek() {
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <h3 className="text-2xl font-bold">{tool.name}</h3>
+              <h3 className="text-2xl font-bold">{tool?.name}</h3>
               <span className="text-xs px-3 py-1 rounded-full bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] text-white font-medium">
-                {tool.category}
+                {tool?.category}
               </span>
             </div>
-            <p className="text-[var(--muted-foreground)] mb-4">{tool.description}</p>
+            <p className="text-[var(--muted-foreground)] mb-4">{tool?.description}</p>
             <div className="flex flex-wrap gap-2 mb-4">
-              {tool.pros.map((p) => (
+              {tool?.pros.map((p) => (
                 <span key={p} className="tag-use-case">{p}</span>
               ))}
             </div>
