@@ -16,9 +16,15 @@ export default function StockDetailPage() {
     const [livePrice, setLivePrice] = useState(stock?.price ?? 0);
     const [flashClass, setFlashClass] = useState("");
 
-    const { favoriteStocks, toggleFavoriteStock } = useDashboardStore();
+    const { favoriteStocks, toggleFavoriteStock, fetchFavorites } = useDashboardStore();
     const { isAuthenticated } = useAuthStore();
     const isFavorite = favoriteStocks.includes(ticker);
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            fetchFavorites();
+        }
+    }, [isAuthenticated, fetchFavorites]);
 
     // Simulate real-time price updates
     useEffect(() => {

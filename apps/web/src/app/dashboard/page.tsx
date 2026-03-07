@@ -6,9 +6,14 @@ import { stocks } from "@/lib/data/stocks";
 import { motion } from "framer-motion";
 import { BookOpen, Cpu, TrendingUp, TrendingDown, Pin, Heart, Bookmark, Star } from "lucide-react";
 import Link from "next/link";
+import { useEffect } from "react";
 
 export default function DashboardPage() {
-    const { savedBlogs, pinnedTools, favoriteStocks, toggleSavedBlog, togglePinnedTool, toggleFavoriteStock } = useDashboardStore();
+    const { savedBlogs, pinnedTools, favoriteStocks, toggleSavedBlog, togglePinnedTool, toggleFavoriteStock, fetchFavorites } = useDashboardStore();
+
+    useEffect(() => {
+        fetchFavorites();
+    }, [fetchFavorites]);
 
     const userBlogs = blogs.filter((b) => savedBlogs.includes(b.id));
     const userTools = tools.filter((t) => pinnedTools.includes(t.id));

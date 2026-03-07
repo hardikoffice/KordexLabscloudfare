@@ -25,3 +25,16 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: Optional[str] = None
+
+class FavoriteStockBase(BaseModel):
+    ticker: str
+
+class FavoriteStockCreate(FavoriteStockBase):
+    pass
+
+class FavoriteStockOut(FavoriteStockBase):
+    id: int
+    user_id: int
+
+    class Config:
+        from_attributes = True
