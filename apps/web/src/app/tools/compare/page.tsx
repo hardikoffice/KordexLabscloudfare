@@ -4,12 +4,21 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Check, X } from "lucide-react";
 import Link from "next/link";
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
 
 function CompareToolsContent() {
+    const router = useRouter();
+    const { isAuthenticated } = useAuthStore();
     const searchParams = useSearchParams();
     const idsString = searchParams.get("ids");
     const [selected, setSelected] = useState<string[]>([]);
+
+    useEffect(() => {
+        if (!isAuthenticated) {
+            router.push(`/login?callback=${window.location.pathname}${window.location.search}`);
+        }
+    }, [isAuthenticated, router]);
 
     useEffect(() => {
         if (idsString) {

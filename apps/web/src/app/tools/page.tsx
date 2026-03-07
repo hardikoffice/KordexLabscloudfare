@@ -6,8 +6,12 @@ import { tools, AITool, PricingModel, AccessType } from "@/lib/data/tools";
 import { blogs } from "@/lib/data/blogs";
 import { stocks } from "@/lib/data/stocks";
 import Link from "next/link";
+import { useAuthStore } from "@/store/authStore";
+import { useRouter } from "next/navigation";
 
 export default function ToolsPage() {
+    const router = useRouter();
+    const { isAuthenticated } = useAuthStore();
     const [search, setSearch] = useState("");
     const categories = Array.from(new Set(tools.map((t) => t.category)));
     const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -365,9 +369,18 @@ export default function ToolsPage() {
                             </h3>
                             <p className="text-[var(--muted-foreground)] font-medium">Evaluate AI tools side-by-side to find your perfect match.</p>
                         </div>
-                        <Link href="/tools/compare" className="glow-btn flex items-center gap-2 whitespace-nowrap px-10 py-4 rounded-2xl relative z-10 font-bold uppercase tracking-widest text-sm transition-transform hover:scale-105">
+                        <button
+                            onClick={() => {
+                                if (isAuthenticated) {
+                                    router.push("/tools/compare");
+                                } else {
+                                    router.push("/login?callback=/tools/compare");
+                                }
+                            }}
+                            className="glow-btn flex items-center gap-2 whitespace-nowrap px-10 py-4 rounded-2xl relative z-10 font-bold uppercase tracking-widest text-sm transition-transform hover:scale-105"
+                        >
                             Explore Matrix <ArrowRight className="w-5 h-5" />
-                        </Link>
+                        </button>
                         <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-[var(--primary)]/10 to-[var(--accent)]/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
                 )}
@@ -735,12 +748,18 @@ export default function ToolsPage() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
-                                <Link
-                                    href={`/tools/compare?ids=${selectedTools.map(t => t.id).join(',')}`}
+                                <button
+                                    onClick={() => {
+                                        if (isAuthenticated) {
+                                            router.push(`/tools/compare?ids=${selectedTools.map(t => t.id).join(',')}`);
+                                        } else {
+                                            router.push(`/login?callback=/tools/compare?ids=${selectedTools.map(t => t.id).join(',')}`);
+                                        }
+                                    }}
                                     className="glow-btn py-2 px-6 flex items-center gap-2 text-sm whitespace-nowrap"
                                 >
                                     Compare Selected <ArrowRight className="w-4 h-4" />
-                                </Link>
+                                </button>
                             </div>
                         </div>
                     </motion.div>

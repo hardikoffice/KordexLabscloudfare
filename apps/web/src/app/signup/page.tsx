@@ -3,19 +3,29 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { User, Mail, Lock, ArrowRight, Loader2, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
+import { useEffect, Suspense } from "react";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
-export default function SignupPage() {
+function SignupContent() {
     const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const callback = searchParams.get("callback") || "/";
     const login = useAuthStore((state) => state.login);
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            router.push(callback);
+        }
+    }, [isAuthenticated, router, callback]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -45,9 +55,9 @@ export default function SignupPage() {
             const loginData = await loginResponse.json();
             if (loginResponse.ok) {
                 login(data, loginData.access_token);
-                router.push("/");
+                router.push(callback);
             } else {
-                router.push("/login");
+                router.push(`/login?callback=${callback}`);
             }
         } catch (err: any) {
             setError(err.message);
@@ -154,12 +164,20 @@ export default function SignupPage() {
 
                     <p className="text-center mt-8 text-sm text-[var(--muted-foreground)]">
                         Already have an account?{" "}
-                        <Link href="/login" className="text-[var(--primary)] hover:text-white transition-colors font-semibold">
+                        <Link href={`/login?callback=${callback}`} className="text-[var(--primary)] hover:text-white transition-colors font-semibold">
                             Log in
                         </Link>
                     </p>
                 </div>
             </motion.div>
         </div>
+    );
+}
+
+export default function SignupPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center min-h-screen">Loading...</div>}>
+            <SignupContent />
+        </Suspense>
     );
 }
