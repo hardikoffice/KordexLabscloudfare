@@ -11,7 +11,7 @@ export default function Footer() {
                         <div className="flex items-center gap-2 mb-4">
                             <div className="relative w-8 h-8 flex-shrink-0">
                                 <Image
-                                    src="/logo.png"
+                                    src="/logo-v2.png"
                                     alt="KordexLabs"
                                     fill
                                     className="object-contain mix-blend-screen"

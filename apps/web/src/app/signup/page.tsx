@@ -84,7 +84,7 @@ function SignupContent() {
                     <div className="text-center mb-10">
                         <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-[var(--surface)] mb-6 shadow-xl border border-[var(--card-border)] relative overflow-hidden">
                             <Image
-                                src="/logo.png"
+                                src="/logo-v2.png"
                                 alt="KordexLabs Logo"
                                 fill
                                 className="p-3 object-contain mix-blend-screen"

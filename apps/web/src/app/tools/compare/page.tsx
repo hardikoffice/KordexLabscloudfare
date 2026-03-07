@@ -48,7 +48,7 @@ function CompareToolsContent() {
             <Link href="/tools" className="inline-flex items-center gap-3 text-sm text-[var(--muted-foreground)] hover:text-[var(--primary)] mb-8 group bg-[var(--surface)] px-4 py-2 rounded-xl transition-all border border-[var(--card-border)] hover:border-[var(--primary)]/50 shadow-lg">
                 <div className="relative w-5 h-5 flex-shrink-0">
                     <Image
-                        src="/logo.png"
+                        src="/logo-v2.png"
                         alt="Logo"
                         fill
                         className="object-contain mix-blend-screen"

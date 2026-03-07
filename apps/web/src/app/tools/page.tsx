@@ -367,7 +367,7 @@ export default function ToolsPage() {
                             <h3 className="font-black text-xl mb-1 flex items-center gap-2">
                                 <div className="relative w-6 h-6 flex-shrink-0">
                                     <Image
-                                        src="/logo.png"
+                                        src="/logo-v2.png"
                                         alt="KordexLabs Logo"
                                         fill
                                         className="object-contain mix-blend-screen"

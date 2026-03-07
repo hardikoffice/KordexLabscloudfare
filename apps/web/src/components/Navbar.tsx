@@ -34,7 +34,7 @@ export default function Navbar() {
                     <Link href="/" className="flex items-center gap-2 group">
                         <div className="relative w-10 h-10 overflow-hidden">
                             <Image
-                                src="/logo.png"
+                                src="/logo-v2.png"
                                 alt="KordexLabs Logo"
                                 fill
                                 className="object-contain transition-transform duration-300 group-hover:scale-110 mix-blend-screen"
