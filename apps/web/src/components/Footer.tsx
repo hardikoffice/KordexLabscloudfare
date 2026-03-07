@@ -1,5 +1,5 @@
-import { Zap } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function Footer() {
     return (
@@ -9,8 +9,13 @@ export default function Footer() {
                     {/* Brand */}
                     <div className="md:col-span-1">
                         <div className="flex items-center gap-2 mb-4">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center">
-                                <Zap className="w-5 h-5 text-white" />
+                            <div className="relative w-8 h-8 flex-shrink-0">
+                                <Image
+                                    src="/logo.png"
+                                    alt="KordexLabs"
+                                    fill
+                                    className="object-contain"
+                                />
                             </div>
                             <span className="text-lg font-bold bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] bg-clip-text text-transparent">
                                 KordexLabs

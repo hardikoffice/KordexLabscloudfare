@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
 import { useEffect, Suspense } from "react";
+import Image from "next/image";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -78,8 +79,13 @@ function LoginContent() {
             >
                 <div className="glass-card p-8 md:p-10 border border-[var(--card-border)] shadow-2xl">
                     <div className="text-center mb-10">
-                        <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] mb-6 shadow-lg shadow-purple-500/20">
-                            <Sparkles className="w-8 h-8 text-white" />
+                        <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-[var(--surface)] mb-6 shadow-xl border border-[var(--card-border)] relative overflow-hidden">
+                            <Image
+                                src="/logo.png"
+                                alt="KordexLabs Logo"
+                                fill
+                                className="p-3 object-contain"
+                            />
                         </div>
                         <h1 className="text-3xl font-extrabold mb-2 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
                             Welcome Back

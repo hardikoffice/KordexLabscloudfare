@@ -8,6 +8,7 @@ import { stocks } from "@/lib/data/stocks";
 import Link from "next/link";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function ToolsPage() {
     const router = useRouter();
@@ -364,7 +365,14 @@ export default function ToolsPage() {
                     <div className="glass-card p-6 flex flex-col sm:flex-row items-center justify-between gap-6 relative overflow-hidden group border-[var(--primary)]/20">
                         <div className="relative z-10">
                             <h3 className="font-black text-xl mb-1 flex items-center gap-2">
-                                <Zap className="w-5 h-5 text-[var(--primary)]" />
+                                <div className="relative w-6 h-6 flex-shrink-0">
+                                    <Image
+                                        src="/logo.png"
+                                        alt="KordexLabs Logo"
+                                        fill
+                                        className="object-contain"
+                                    />
+                                </div>
                                 Interactive Comparison Matrix
                             </h3>
                             <p className="text-[var(--muted-foreground)] font-medium">Evaluate AI tools side-by-side to find your perfect match.</p>

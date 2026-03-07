@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
+import Image from "next/image";
 
 function CompareToolsContent() {
     const router = useRouter();
@@ -44,8 +45,16 @@ function CompareToolsContent() {
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <Link href="/tools" className="inline-flex items-center gap-2 text-sm text-[var(--muted-foreground)] hover:text-[var(--primary)] mb-6">
-                <ArrowLeft className="w-4 h-4" /> Back to AI Tools
+            <Link href="/tools" className="inline-flex items-center gap-3 text-sm text-[var(--muted-foreground)] hover:text-[var(--primary)] mb-8 group bg-[var(--surface)] px-4 py-2 rounded-xl transition-all border border-[var(--card-border)] hover:border-[var(--primary)]/50 shadow-lg">
+                <div className="relative w-5 h-5 flex-shrink-0">
+                    <Image
+                        src="/logo.png"
+                        alt="Logo"
+                        fill
+                        className="object-contain"
+                    />
+                </div>
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Back to AI Tools
             </Link>
 
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
@@ -86,11 +95,18 @@ function CompareToolsContent() {
                                 <th className="sticky left-0 bg-[var(--surface)] px-6 py-4 text-left text-sm font-semibold uppercase tracking-wider text-[var(--muted)] rounded-tl-2xl z-10">Feature</th>
                                 {selectedTools.map((tool) => (
                                     <th key={tool.id} className="px-6 py-4 text-center min-w-[200px]">
-                                        <div className="flex flex-col items-center gap-2">
-                                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center text-white font-bold">
-                                                {tool.name.charAt(0)}
+                                        <div className="flex flex-col items-center gap-3">
+                                            <div className="w-12 h-12 rounded-2xl bg-[var(--surface)] flex items-center justify-center text-xl font-black text-[var(--primary)] overflow-hidden shadow-inner border border-[var(--card-border)] relative">
+                                                {tool.logo_url ? (
+                                                    <Image
+                                                        src={tool.logo_url}
+                                                        alt={tool.name}
+                                                        fill
+                                                        className="object-contain p-2"
+                                                    />
+                                                ) : tool.name.charAt(0)}
                                             </div>
-                                            <span className="font-bold">{tool.name}</span>
+                                            <span className="font-bold text-base">{tool.name}</span>
                                         </div>
                                     </th>
                                 ))}

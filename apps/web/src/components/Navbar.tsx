@@ -2,9 +2,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/authStore";
-import { Menu, X, Zap, LogOut, User as UserIcon } from "lucide-react";
+import { Menu, X, LogOut, User as UserIcon } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
 
 const navLinks = [
     { href: "/", label: "Home" },
@@ -31,8 +32,14 @@ export default function Navbar() {
                 <div className="flex items-center justify-between h-16">
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2 group">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--primary)] to-[var(--accent)] flex items-center justify-center shadow-lg shadow-purple-500/20">
-                            <Zap className="w-5 h-5 text-white" />
+                        <div className="relative w-10 h-10 overflow-hidden">
+                            <Image
+                                src="/logo.png"
+                                alt="KordexLabs Logo"
+                                fill
+                                className="object-contain transition-transform duration-300 group-hover:scale-110"
+                                priority
+                            />
                         </div>
                         <span className="text-xl font-bold bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] bg-clip-text text-transparent">
                             KordexLabs
