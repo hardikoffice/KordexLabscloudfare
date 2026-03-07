@@ -38,3 +38,16 @@ class FavoriteStockOut(FavoriteStockBase):
 
     class Config:
         from_attributes = True
+
+class SavedBlogBase(BaseModel):
+    blog_id: str
+
+class SavedBlogCreate(SavedBlogBase):
+    pass
+
+class SavedBlogOut(SavedBlogBase):
+    id: int
+    user_id: int
+
+    class Config:
+        from_attributes = True

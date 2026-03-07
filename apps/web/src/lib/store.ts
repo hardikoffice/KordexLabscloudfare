@@ -5,16 +5,17 @@ interface DashboardStore {
   savedBlogs: string[];
   pinnedTools: string[];
   favoriteStocks: string[];
-  toggleSavedBlog: (id: string) => void;
+  toggleSavedBlog: (id: string) => Promise<void>;
   togglePinnedTool: (id: string) => void;
   toggleFavoriteStock: (ticker: string) => Promise<void>;
   fetchFavorites: () => Promise<void>;
+  fetchSavedBlogs: () => Promise<void>;
 }
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000") + "/api";
 
 export const useDashboardStore = create<DashboardStore>((set, get) => ({
-  savedBlogs: ["1", "3"],
+  savedBlogs: [],
   pinnedTools: ["1", "4"],
   favoriteStocks: [],
   fetchFavorites: async () => {
@@ -38,12 +39,67 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
       console.error("Failed to fetch favorites:", err);
     }
   },
-  toggleSavedBlog: (id) =>
-    set((s) => ({
-      savedBlogs: s.savedBlogs.includes(id)
-        ? s.savedBlogs.filter((b) => b !== id)
-        : [...s.savedBlogs, id],
-    })),
+  fetchSavedBlogs: async () => {
+    try {
+      const authData = localStorage.getItem('auth-storage');
+      const token = authData ? JSON.parse(authData)?.state?.token : null;
+      if (!token) return;
+
+      const res = await fetch(`${API_BASE}/saved-blogs/`, {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        set({ savedBlogs: data.map((b: any) => b.blog_id) });
+      }
+    } catch (err) {
+      console.error("Failed to fetch saved blogs:", err);
+    }
+  },
+  toggleSavedBlog: async (id) => {
+    const isSaved = get().savedBlogs.includes(id);
+    const authData = localStorage.getItem('auth-storage');
+    const token = authData ? JSON.parse(authData)?.state?.token : null;
+    const { addNotification } = useNotificationStore.getState();
+
+    if (!token) {
+      addNotification("Please login to save blogs", "info");
+      return;
+    }
+
+    try {
+      if (isSaved) {
+        const res = await fetch(`${API_BASE}/saved-blogs/${id}`, {
+          method: "DELETE",
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (res.ok) {
+          set((s) => ({ savedBlogs: s.savedBlogs.filter((b) => b !== id) }));
+          addNotification("Blog removed from reading list", "info");
+        } else {
+          addNotification("Failed to remove blog", "error");
+        }
+      } else {
+        const res = await fetch(`${API_BASE}/saved-blogs/`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ blog_id: id })
+        });
+        if (res.ok) {
+          set((s) => ({ savedBlogs: [...s.savedBlogs, id] }));
+          addNotification("Blog saved to your dashboard!", "success");
+        } else {
+          addNotification("Failed to save blog", "error");
+        }
+      }
+    } catch (err) {
+      console.error("Toggle saved blog failed:", err);
+      addNotification("Network error. Please try again.", "error");
+    }
+  },
   togglePinnedTool: (id) =>
     set((s) => ({
       pinnedTools: s.pinnedTools.includes(id)

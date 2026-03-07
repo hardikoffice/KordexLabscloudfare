@@ -3,14 +3,20 @@ import { blogs } from "@/lib/data/blogs";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Clock, Calendar, Tag } from "lucide-react";
+import { ArrowLeft, Clock, Calendar, Tag, Bookmark } from "lucide-react";
 import Link from "next/link";
+import { useDashboardStore } from "@/lib/store";
 
 export default function BlogDetailPage() {
     const params = useParams();
     const blog = blogs.find((b) => b.id === params.id);
     const [progress, setProgress] = useState(0);
+    const { savedBlogs, toggleSavedBlog, fetchSavedBlogs } = useDashboardStore();
 
+    useEffect(() => {
+        fetchSavedBlogs();
+    }, [fetchSavedBlogs]);
+    传输
     useEffect(() => {
         const handleScroll = () => {
             const scrollTop = window.scrollY;
@@ -156,10 +162,22 @@ export default function BlogDetailPage() {
 
                             <h1 className="text-3xl md:text-4xl font-extrabold mb-4">{blog.title}</h1>
 
-                            <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--muted-foreground)] mb-8 pb-8 border-b border-[var(--card-border)]">
-                                <span className="font-medium text-[var(--foreground)]">{blog.author}</span>
-                                <span className="flex items-center gap-1"><Calendar className="w-4 h-4" />{blog.published_at}</span>
-                                <span className="flex items-center gap-1"><Clock className="w-4 h-4" />{blog.read_time_minutes} min read</span>
+                            <div className="flex flex-wrap items-center justify-between gap-4 mb-8 pb-8 border-b border-[var(--card-border)]">
+                                <div className="flex flex-wrap items-center gap-4 text-sm text-[var(--muted-foreground)]">
+                                    <span className="font-medium text-[var(--foreground)]">{blog.author}</span>
+                                    <span className="flex items-center gap-1"><Calendar className="w-4 h-4" />{blog.published_at}</span>
+                                    <span className="flex items-center gap-1"><Clock className="w-4 h-4" />{blog.read_time_minutes} min read</span>
+                                </div>
+                                <button
+                                    onClick={() => toggleSavedBlog(blog.id)}
+                                    className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border transition-all font-bold text-sm ${savedBlogs.includes(blog.id)
+                                            ? "bg-[var(--primary)]/10 border-[var(--primary)]/20 text-[var(--primary)]"
+                                            : "bg-[var(--surface)] border-[var(--card-border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:border-[var(--muted)]"
+                                        }`}
+                                >
+                                    <Bookmark className={`w-4 h-4 ${savedBlogs.includes(blog.id) ? "fill-current" : ""}`} />
+                                    {savedBlogs.includes(blog.id) ? "Saved to Dashboard" : "Save Article"}
+                                </button>
                             </div>
 
                             {/* Content */}

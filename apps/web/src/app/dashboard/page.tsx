@@ -9,12 +9,12 @@ import Link from "next/link";
 import { useEffect } from "react";
 
 export default function DashboardPage() {
-    const { savedBlogs, pinnedTools, favoriteStocks, toggleSavedBlog, togglePinnedTool, toggleFavoriteStock, fetchFavorites } = useDashboardStore();
+    const { savedBlogs, pinnedTools, favoriteStocks, toggleSavedBlog, togglePinnedTool, toggleFavoriteStock, fetchFavorites, fetchSavedBlogs } = useDashboardStore();
 
     useEffect(() => {
         fetchFavorites();
-    }, [fetchFavorites]);
-
+        fetchSavedBlogs();
+    }, [fetchFavorites, fetchSavedBlogs]);
     const userBlogs = blogs.filter((b) => savedBlogs.includes(b.id));
     const userTools = tools.filter((t) => pinnedTools.includes(t.id));
     const userStocks = stocks.filter((s) => favoriteStocks.includes(s.ticker));

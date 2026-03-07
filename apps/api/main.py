@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import blogs, tools, stocks, auth, favorites
+from routers import blogs, tools, stocks, auth, favorites, saved_blogs
 from database import engine, Base
 
 app = FastAPI(title="KordexLabs API", version="1.0.0")
@@ -28,6 +28,7 @@ app.include_router(tools.router, prefix="/api")
 app.include_router(stocks.router, prefix="/api")
 app.include_router(auth.router, prefix="/api")
 app.include_router(favorites.router, prefix="/api")
+app.include_router(saved_blogs.router, prefix="/api")
 
 
 @app.get("/")

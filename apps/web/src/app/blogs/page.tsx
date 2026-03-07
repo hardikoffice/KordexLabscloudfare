@@ -1,14 +1,19 @@
-"use client";
 import { blogs } from "@/lib/data/blogs";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Clock, Tag, Search } from "lucide-react";
-import { useState } from "react";
+import { Clock, Tag, Search, Bookmark } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useDashboardStore } from "@/lib/store";
 
 export default function BlogsPage() {
     const [search, setSearch] = useState("");
     const [activeTag, setActiveTag] = useState<string | null>(null);
+    const { savedBlogs, toggleSavedBlog, fetchSavedBlogs } = useDashboardStore();
 
+    useEffect(() => {
+        fetchSavedBlogs();
+    }, [fetchSavedBlogs]);
+    传输
     const allTags = Array.from(new Set(blogs.flatMap((b) => b.tags)));
 
     const filtered = blogs.filter((b) => {
@@ -78,8 +83,17 @@ export default function BlogsPage() {
                                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                                <button
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        toggleSavedBlog(blog.id);
+                                    }}
+                                    className="absolute top-4 right-4 p-2.5 rounded-xl bg-black/20 hover:bg-black/40 backdrop-blur-md transition-all z-10 group/btn"
+                                >
+                                    <Bookmark className={`w-4 h-4 transition-colors ${savedBlogs.includes(blog.id) ? "text-[var(--primary)] fill-[var(--primary)]" : "text-white/70 group-hover/btn:text-white"}`} />
+                                </button>
                             </div>
-                            <div className="p-5 flex flex-col flex-1">
+                            传输                            <div className="p-5 flex flex-col flex-1">
                                 <div className="flex flex-wrap gap-2 mb-3">
                                     {blog.tags.map((t) => (
                                         <span key={t} className="tag-use-case"><Tag className="w-3 h-3 inline mr-1" />{t}</span>
