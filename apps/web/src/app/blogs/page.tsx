@@ -1,3 +1,4 @@
+"use client";
 import { blogs } from "@/lib/data/blogs";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -13,7 +14,7 @@ export default function BlogsPage() {
     useEffect(() => {
         fetchSavedBlogs();
     }, [fetchSavedBlogs]);
-    
+
     const allTags = Array.from(new Set(blogs.flatMap((b) => b.tags)));
 
     const filtered = blogs.filter((b) => {
@@ -93,7 +94,7 @@ export default function BlogsPage() {
                                     <Bookmark className={`w-4 h-4 transition-colors ${savedBlogs.includes(blog.id) ? "text-[var(--primary)] fill-[var(--primary)]" : "text-white/70 group-hover/btn:text-white"}`} />
                                 </button>
                             </div>
-                                                        <div className="p-5 flex flex-col flex-1">
+                            <div className="p-5 flex flex-col flex-1">
                                 <div className="flex flex-wrap gap-2 mb-3">
                                     {blog.tags.map((t) => (
                                         <span key={t} className="tag-use-case"><Tag className="w-3 h-3 inline mr-1" />{t}</span>
