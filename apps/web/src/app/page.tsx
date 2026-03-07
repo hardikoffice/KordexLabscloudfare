@@ -137,6 +137,7 @@ function TrendingBlogs() {
 }
 
 import { useState, useEffect } from "react";
+import Testimonials from "@/components/Testimonials";
 
 function ToolOfTheWeek() {
   const [toolIndex, setToolIndex] = useState(0);
@@ -195,6 +196,7 @@ export default function HomePage() {
       <TickerTape />
       <TrendingBlogs />
       <ToolOfTheWeek />
+      <Testimonials />
     </>
   );
 }

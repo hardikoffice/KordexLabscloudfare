@@ -5,7 +5,7 @@ export default function Footer() {
     return (
         <footer className="border-t border-[var(--card-border)] mt-20">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     {/* Brand */}
                     <div className="md:col-span-1">
                         <div className="flex items-center gap-2 mb-4">
@@ -34,14 +34,6 @@ export default function Footer() {
                             <Link href="/tools" className="text-sm hover:text-[var(--primary)] transition-colors">AI Tools</Link>
                             <Link href="/markets" className="text-sm hover:text-[var(--primary)] transition-colors">Markets</Link>
                             <Link href="/dashboard" className="text-sm hover:text-[var(--primary)] transition-colors">Dashboard</Link>
-                        </div>
-                    </div>
-                    <div>
-                        <h4 className="font-semibold mb-3 text-sm uppercase tracking-wider text-[var(--muted-foreground)]">Resources</h4>
-                        <div className="flex flex-col gap-2">
-                            <span className="text-sm text-[var(--muted-foreground)]">API Documentation</span>
-                            <span className="text-sm text-[var(--muted-foreground)]">Developer Guide</span>
-                            <span className="text-sm text-[var(--muted-foreground)]">Status Page</span>
                         </div>
                     </div>
                     <div>
