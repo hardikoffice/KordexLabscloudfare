@@ -2,10 +2,12 @@
 import { stocks } from "@/lib/data/stocks";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft, TrendingUp, TrendingDown, ExternalLink } from "lucide-react";
+import { ArrowLeft, TrendingUp, TrendingDown, ExternalLink, Heart } from "lucide-react";
 import Link from "next/link";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from "recharts";
 import { useState, useEffect } from "react";
+import { useDashboardStore } from "@/lib/store";
+import { useAuthStore } from "@/store/authStore";
 
 export default function StockDetailPage() {
     const params = useParams();
@@ -13,6 +15,10 @@ export default function StockDetailPage() {
     const stock = stocks.find((s) => s.ticker === ticker);
     const [livePrice, setLivePrice] = useState(stock?.price ?? 0);
     const [flashClass, setFlashClass] = useState("");
+
+    const { favoriteStocks, toggleFavoriteStock } = useDashboardStore();
+    const { isAuthenticated } = useAuthStore();
+    const isFavorite = favoriteStocks.includes(ticker);
 
     // Simulate real-time price updates
     useEffect(() => {
@@ -57,6 +63,18 @@ export default function StockDetailPage() {
                     <div>
                         <div className="flex items-center gap-3 mb-2">
                             <h1 className="text-4xl font-extrabold">{stock.ticker}</h1>
+                            {isAuthenticated && (
+                                <button
+                                    onClick={() => toggleFavoriteStock(stock.ticker)}
+                                    className={`p-2 rounded-full transition-all duration-300 ${isFavorite
+                                        ? "bg-red-500/10 text-red-500"
+                                        : "hover:bg-[var(--surface-hover)] text-[var(--muted-foreground)]"
+                                        }`}
+                                    title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+                                >
+                                    <Heart className={`w-6 h-6 ${isFavorite ? "fill-current" : ""}`} />
+                                </button>
+                            )}
                             <span className="text-sm px-3 py-1 rounded-lg bg-[var(--surface)] text-[var(--muted-foreground)]">{stock.exchange}</span>
                             <span className="text-sm px-3 py-1 rounded-lg bg-[var(--surface)] text-[var(--muted-foreground)]">{stock.asset_type}</span>
                         </div>
