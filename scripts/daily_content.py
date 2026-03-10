@@ -61,8 +61,7 @@ def generate_content(data: str, article_type: str) -> Dict:
     try:
         print("Available models:")
         for m in client.models.list():
-            if 'generateContent' in m.supported_generation_methods:
-                print(f" - {m.name}")
+            print(f" - {m}")
     except Exception as e:
         print(f"Could not list models: {e}")
 
@@ -85,9 +84,9 @@ def generate_content(data: str, article_type: str) -> Dict:
         f"Data: {data}\n"
     )
     
-    # Using the latest gemini-2.0-flash for best compatibility
+    # Using the most stable gemini-1.5-flash-latest
     response = client.models.generate_content(
-        model='gemini-2.0-flash',
+        model='gemini-1.5-flash-latest',
         contents=prompt,
         config=types.GenerateContentConfig(
             response_mime_type='application/json'
