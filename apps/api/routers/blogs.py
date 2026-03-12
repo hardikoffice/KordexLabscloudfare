@@ -1,63 +1,62 @@
-from fastapi import APIRouter
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
 from typing import List
+import uuid
+
+from database import get_db
+from models import Blog
+from schemas import BlogOut, BlogCreate
 
 router = APIRouter()
 
-
-class BlogOut(BaseModel):
-    id: str
-    title: str
-    author: str
-    read_time_minutes: int
-    hero_image_url: str
-    tags: List[str]
-    published_at: str
-    content_markdown: str
-
-
-BLOGS = [
-    BlogOut(
-        id="1",
-        title="GPT-5 is Here: What It Means for Developers",
-        author="Sarah Chen",
-        read_time_minutes=8,
-        hero_image_url="https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80",
-        tags=["LLM", "OpenAI", "Trending"],
-        published_at="2026-02-28",
-        content_markdown="Full article content here...",
-    ),
-    BlogOut(
-        id="2",
-        title="Claude 4 vs GPT-5: The Ultimate Comparison",
-        author="Marcus Rivera",
-        read_time_minutes=12,
-        hero_image_url="https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=800&q=80",
-        tags=["Comparison", "LLM", "Anthropic"],
-        published_at="2026-02-25",
-        content_markdown="Full article content here...",
-    ),
-    BlogOut(
-        id="3",
-        title="Building AI Agents with LangGraph: A Complete Guide",
-        author="Priya Sharma",
-        read_time_minutes=15,
-        hero_image_url="https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800&q=80",
-        tags=["Tutorial", "Agents", "LangChain"],
-        published_at="2026-02-22",
-        content_markdown="Full article content here...",
-    ),
-]
-
+@router.get("/blogs", response_model=List[BlogOut])
+async def get_all_blogs(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Blog).order_by(Blog.created_at.desc()))
+    blogs = result.scalars().all()
+    # Convert tags from comma-separated string to list
+    for b in blogs:
+        if isinstance(b.tags, str):
+            b.tags = b.tags.split(",") if b.tags else []
+    return blogs
 
 @router.get("/blogs/trending", response_model=List[BlogOut])
-def get_trending_blogs():
-    return BLOGS[:3]
-
+async def get_trending_blogs(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Blog).order_by(Blog.created_at.desc()).limit(3))
+    blogs = result.scalars().all()
+    for b in blogs:
+        if isinstance(b.tags, str):
+            b.tags = b.tags.split(",") if b.tags else []
+    return blogs
 
 @router.get("/blogs/{blog_id}", response_model=BlogOut)
-def get_blog(blog_id: str):
-    for b in BLOGS:
-        if b.id == blog_id:
-            return b
-    return {"error": "Not found"}
+async def get_blog(blog_id: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Blog).where(Blog.id == blog_id))
+    blog = result.scalars().first()
+    if not blog:
+        raise HTTPException(status_code=404, detail="Blog not found")
+    
+    if isinstance(blog.tags, str):
+        blog.tags = blog.tags.split(",") if blog.tags else []
+    return blog
+
+@router.post("/blogs", response_model=BlogOut)
+async def create_blog(blog: BlogCreate, db: AsyncSession = Depends(get_db)):
+    db_blog = Blog(
+        id=str(uuid.uuid4()),
+        title=blog.title,
+        author=blog.author,
+        read_time_minutes=blog.read_time_minutes,
+        hero_image_url=blog.hero_image_url,
+        tags=",".join(blog.tags),
+        published_at=blog.published_at,
+        content_markdown=blog.content_markdown
+    )
+    db.add(db_blog)
+    await db.commit()
+    await db.refresh(db_blog)
+    
+    # Convert tags back to list for response
+    db_blog.tags = db_blog.tags.split(",") if db_blog.tags else []
+    return db_blog
+精准

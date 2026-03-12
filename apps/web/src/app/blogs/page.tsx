@@ -1,5 +1,5 @@
 "use client";
-import { blogs } from "@/lib/data/blogs";
+import { Blog, fetchAllBlogs } from "@/lib/api";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -8,12 +8,20 @@ import { useState, useEffect } from "react";
 import { useDashboardStore } from "@/lib/store";
 
 export default function BlogsPage() {
+    const [blogs, setBlogs] = useState<Blog[]>([]);
+    const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
     const [activeTag, setActiveTag] = useState<string | null>(null);
     const { savedBlogs, toggleSavedBlog, fetchSavedBlogs } = useDashboardStore();
 
     useEffect(() => {
         fetchSavedBlogs();
+        const getBlogs = async () => {
+            const data = await fetchAllBlogs();
+            setBlogs(data);
+            setLoading(false);
+        };
+        getBlogs();
     }, [fetchSavedBlogs]);
 
     const allTags = Array.from(new Set(blogs.flatMap((b) => b.tags)));

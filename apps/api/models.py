@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Text, func
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -31,3 +31,16 @@ class UserSavedBlog(Base):
     blog_id = Column(String, nullable=False)
 
     user = relationship("User", back_populates="saved_blogs")
+
+class Blog(Base):
+    __tablename__ = "blogs"
+
+    id = Column(String, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    author = Column(String, nullable=False)
+    read_time_minutes = Column(Integer, default=5)
+    hero_image_url = Column(String)
+    tags = Column(String) # Stored as comma-separated string for simplicity
+    published_at = Column(String)
+    content_markdown = Column(Text, nullable=False)
+    created_at = Column(DateTime, server_default=func.now())

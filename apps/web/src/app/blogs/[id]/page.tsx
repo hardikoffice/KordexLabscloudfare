@@ -1,5 +1,5 @@
 "use client";
-import { blogs } from "@/lib/data/blogs";
+import { Blog, fetchBlogById } from "@/lib/api";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
@@ -10,13 +10,22 @@ import { useDashboardStore } from "@/lib/store";
 
 export default function BlogDetailPage() {
     const params = useParams();
-    const blog = blogs.find((b) => b.id === params.id);
+    const [blog, setBlog] = useState<Blog | null>(null);
+    const [loading, setLoading] = useState(true);
     const [progress, setProgress] = useState(0);
     const { savedBlogs, toggleSavedBlog, fetchSavedBlogs } = useDashboardStore();
 
     useEffect(() => {
         fetchSavedBlogs();
-    }, [fetchSavedBlogs]);
+        const getBlog = async () => {
+            if (params.id) {
+                const data = await fetchBlogById(params.id as string);
+                setBlog(data);
+            }
+            setLoading(false);
+        };
+        getBlog();
+    }, [fetchSavedBlogs, params.id]);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -27,6 +36,14 @@ export default function BlogDetailPage() {
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
+
+    if (loading) {
+        return (
+            <div className="max-w-4xl mx-auto px-4 py-20 text-center">
+                <h1 className="text-3xl font-bold mb-4">Loading Article...</h1>
+            </div>
+        );
+    }
 
     if (!blog) {
         return (

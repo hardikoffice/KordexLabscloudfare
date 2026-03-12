@@ -3,8 +3,8 @@ import { motion } from "framer-motion";
 import { ArrowUpRight, TrendingUp, TrendingDown, Sparkles, BookOpen, Cpu } from "lucide-react";
 import Link from "next/link";
 import { stocks } from "@/lib/data/stocks";
-import { blogs } from "@/lib/data/blogs";
 import { tools } from "@/lib/data/tools";
+import { useState, useEffect } from "react";
 
 function TickerTape() {
   const doubled = [...stocks, ...stocks];
@@ -87,8 +87,23 @@ function HeroSection() {
   );
 }
 
+import { Blog, fetchTrendingBlogs } from "@/lib/api";
+
 function TrendingBlogs() {
-  const trending = blogs.slice(0, 3);
+  const [trending, setTrending] = useState<Blog[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const getTrending = async () => {
+      const data = await fetchTrendingBlogs();
+      setTrending(data);
+      setLoading(false);
+    };
+    getTrending();
+  }, []);
+
+  if (loading) return null;
+
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
       <div className="flex items-center justify-between mb-8">
@@ -136,7 +151,6 @@ function TrendingBlogs() {
   );
 }
 
-import { useState, useEffect } from "react";
 import Testimonials from "@/components/Testimonials";
 
 function ToolOfTheWeek() {

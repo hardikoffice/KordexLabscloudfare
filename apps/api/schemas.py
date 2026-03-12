@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -48,6 +48,24 @@ class SavedBlogCreate(SavedBlogBase):
 class SavedBlogOut(SavedBlogBase):
     id: int
     user_id: int
+
+    class Config:
+        from_attributes = True
+
+class BlogBase(BaseModel):
+    title: str
+    author: str
+    read_time_minutes: int = 5
+    hero_image_url: Optional[str] = None
+    tags: List[str]
+    published_at: str
+    content_markdown: str
+
+class BlogCreate(BlogBase):
+    pass
+
+class BlogOut(BlogBase):
+    id: str
 
     class Config:
         from_attributes = True
