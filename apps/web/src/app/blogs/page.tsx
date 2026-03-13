@@ -77,6 +77,23 @@ export default function BlogsPage() {
             </div>
 
             {/* Blog Grid */}
+            {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {[0, 1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="glass-card overflow-hidden animate-pulse">
+                            <div className="h-48 bg-[var(--surface-hover)]" />
+                            <div className="p-5 space-y-3">
+                                <div className="flex gap-2">
+                                    <div className="h-5 bg-[var(--surface-hover)] rounded w-16" />
+                                    <div className="h-5 bg-[var(--surface-hover)] rounded w-20" />
+                                </div>
+                                <div className="h-6 bg-[var(--surface-hover)] rounded w-3/4" />
+                                <div className="h-4 bg-[var(--surface-hover)] rounded w-1/2" />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filtered.map((blog, i) => (
                     <motion.div
@@ -123,6 +140,7 @@ export default function BlogsPage() {
                     </motion.div>
                 ))}
             </div>
+            )}
         </div>
     );
 }

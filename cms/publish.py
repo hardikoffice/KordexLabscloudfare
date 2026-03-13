@@ -1,10 +1,11 @@
 import streamlit as st
 import requests
 import datetime
-import uuid
+import os
 
-# Configuration
-API_URL = "https://kordexlabs.onrender.com/api/blogs"
+# Configuration — support both local and remote backends
+DEFAULT_API_URL = "https://kordexlabs.onrender.com/api/blogs"
+API_URL = os.getenv("CMS_API_URL", DEFAULT_API_URL)
 
 # Optional Cloudinary Setup
 try:
@@ -14,22 +15,57 @@ try:
 except ImportError:
     CLOUDINARY_AVAILABLE = False
 
-# Cloudinary Setup (User should fill these or use environment variables)
-# if CLOUDINARY_AVAILABLE:
-#     cloudinary.config(
-#       cloud_name = 'your_cloud_name',
-#       api_key = 'your_api_key',
-#       api_secret = 'your_api_secret'
-#     )
-
 st.set_page_config(page_title="KordexLabs CMS", layout="wide")
 
 st.title("🚀 KordexLabs Content Management System")
 st.write("Publish daily AI news directly to the website.")
 
-if not CLOUDINARY_AVAILABLE:
-    st.warning("⚠️ 'cloudinary' module not found. Image uploads are disabled. Please run: pip install -r requirements.txt")
+# --- Sidebar ---
+st.sidebar.title("⚙️ Settings")
 
+# API URL toggle
+use_local = st.sidebar.toggle("Use Local Backend", value=False)
+if use_local:
+    API_URL = "http://localhost:8000/api/blogs"
+    st.sidebar.success(f"🟢 Using: Local (`{API_URL}`)")
+else:
+    st.sidebar.info(f"🌐 Using: Remote (`{API_URL}`)")
+
+# Connection check
+st.sidebar.markdown("---")
+st.sidebar.subheader("🔗 Connection Status")
+try:
+    health = requests.get(API_URL.replace("/blogs", "").rstrip("/").rsplit("/api", 1)[0], timeout=10)
+    if health.status_code == 200:
+        st.sidebar.success("✅ Backend is online")
+    else:
+        st.sidebar.warning(f"⚠️ Backend returned status {health.status_code}")
+except requests.exceptions.ConnectionError:
+    st.sidebar.error("❌ Cannot connect to backend — is it running?")
+except Exception as e:
+    st.sidebar.error(f"❌ Connection error: {e}")
+
+# Existing blogs
+st.sidebar.markdown("---")
+st.sidebar.subheader("📰 Published Articles")
+try:
+    existing = requests.get(API_URL, timeout=10)
+    if existing.status_code == 200:
+        blogs = existing.json()
+        if blogs:
+            for b in blogs:
+                st.sidebar.markdown(f"• **{b.get('title', 'Untitled')}** — {b.get('author', 'Unknown')}")
+        else:
+            st.sidebar.caption("No articles published yet.")
+    else:
+        st.sidebar.caption("Could not fetch articles.")
+except Exception:
+    st.sidebar.caption("Could not connect to fetch articles.")
+
+if not CLOUDINARY_AVAILABLE:
+    st.warning("⚠️ 'cloudinary' module not found. Image uploads are disabled. Run: `pip install -r requirements.txt`")
+
+# --- Publish Form ---
 with st.form("blog_form"):
     title = st.text_input("Blog Title", placeholder="Enter a catchy title...")
     author = st.text_input("Author Name", value="Hardik")
@@ -47,7 +83,7 @@ with st.form("blog_form"):
     
     content = st.text_area("Content (Markdown)", height=400, placeholder="Write your blog content here using markdown...")
     
-    submit = st.form_submit_button("Publish Blog")
+    submit = st.form_submit_button("🚀 Publish Blog")
 
 if submit:
     if not title or not content:
@@ -59,10 +95,8 @@ if submit:
             # Handle Upload to Cloudinary if file provided
             if hero_image and CLOUDINARY_AVAILABLE:
                 try:
-                    # upload_result = cloudinary.uploader.upload(hero_image)
-                    # final_image_url = upload_result['secure_url']
                     st.warning("Cloudinary upload is simulated. Please configure credentials in the script.")
-                    final_image_url = "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80" # Fallback
+                    final_image_url = "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80"
                 except Exception as e:
                     st.error(f"Image upload failed: {e}")
             elif hero_image and not CLOUDINARY_AVAILABLE:
@@ -79,17 +113,15 @@ if submit:
             }
             
             try:
-                response = requests.post(API_URL, json=payload)
+                response = requests.post(API_URL, json=payload, timeout=15)
                 if response.status_code == 200:
-                    st.success(f"Successfully published: {title}")
+                    st.success(f"✅ Successfully published: **{title}**")
                     st.balloons()
                 else:
-                    st.error(f"Failed to publish: {response.status_code} - {response.text}")
+                    st.error(f"Failed to publish: {response.status_code} — {response.text}")
+            except requests.exceptions.ConnectionError:
+                st.error("❌ Cannot connect to backend. Make sure it is running.")
+            except requests.exceptions.Timeout:
+                st.error("❌ Request timed out. The backend may be waking up (Render free tier). Try again in 30 seconds.")
             except Exception as e:
-                st.error(f"Error connecting to backend: {e}")
-
-st.sidebar.title("CMS Info")
-st.sidebar.info("""
-This tool connects to your Render backend to insert records into the Neon database.
-Make sure your backend is running and the database table is created.
-""")
+                st.error(f"Error: {e}")

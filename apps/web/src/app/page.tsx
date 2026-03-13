@@ -102,8 +102,6 @@ function TrendingBlogs() {
     getTrending();
   }, []);
 
-  if (loading) return null;
-
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
       <div className="flex items-center justify-between mb-8">
@@ -112,6 +110,19 @@ function TrendingBlogs() {
           View all <ArrowUpRight className="w-4 h-4" />
         </Link>
       </div>
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="glass-card overflow-hidden animate-pulse">
+              <div className="h-48 bg-[var(--surface-hover)]" />
+              <div className="p-5 space-y-3">
+                <div className="h-5 bg-[var(--surface-hover)] rounded w-3/4" />
+                <div className="h-4 bg-[var(--surface-hover)] rounded w-1/2" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {trending.map((blog, i) => (
           <motion.div
@@ -147,6 +158,7 @@ function TrendingBlogs() {
           </motion.div>
         ))}
       </div>
+      )}
     </section>
   );
 }
