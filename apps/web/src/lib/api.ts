@@ -11,7 +11,7 @@ export interface Blog {
     content_markdown: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://kordexlabs.onrender.com/api";
+const API_URL = process.env.NEXT_PUBLIC_NEWS_API_URL || "https://kordexlabs.onrender.com/api";
 
 // Default placeholder image for blogs missing a hero image
 const DEFAULT_HERO_IMAGE = "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80";
