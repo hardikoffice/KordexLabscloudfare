@@ -2,6 +2,9 @@ import streamlit as st
 import requests
 import datetime
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Configuration — support both local and remote backends
 DEFAULT_API_URL = "https://kordexlabs.onrender.com/api/blogs"
@@ -11,6 +14,10 @@ API_URL = os.getenv("CMS_API_URL", DEFAULT_API_URL)
 try:
     import cloudinary
     import cloudinary.uploader
+    
+    if not os.getenv("CLOUDINARY_URL") and not (os.getenv("CLOUDINARY_CLOUD_NAME") and os.getenv("CLOUDINARY_API_KEY") and os.getenv("CLOUDINARY_API_SECRET")):
+        st.warning("Cloudinary credentials not found in environment variables. Image uploads will fail.")
+    
     CLOUDINARY_AVAILABLE = True
 except ImportError:
     CLOUDINARY_AVAILABLE = False
@@ -95,8 +102,11 @@ if submit:
             # Handle Upload to Cloudinary if file provided
             if hero_image and CLOUDINARY_AVAILABLE:
                 try:
-                    st.warning("Cloudinary upload is simulated. Please configure credentials in the script.")
-                    final_image_url = "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80"
+                    # Upload file to Cloudinary
+                    st.info("Uploading image to Cloudinary...")
+                    upload_result = cloudinary.uploader.upload(hero_image.getvalue())
+                    final_image_url = upload_result.get("secure_url", image_url_input)
+                    st.success("Image uploaded successfully!")
                 except Exception as e:
                     st.error(f"Image upload failed: {e}")
             elif hero_image and not CLOUDINARY_AVAILABLE:
