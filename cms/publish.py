@@ -15,6 +15,28 @@ try:
     import cloudinary
     import cloudinary.uploader
     
+    # Try to configure cloudinary using individual credentials if URL fails or isn't picked up
+    cloudinary.config(
+        cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME", ""),
+        api_key = os.getenv("CLOUDINARY_API_KEY", ""),
+        api_secret = os.getenv("CLOUDINARY_API_SECRET", ""),
+        secure = True
+    )
+
+    if os.getenv("CLOUDINARY_URL"):
+        try:
+            import re
+            m = re.match(r"cloudinary://([^:]+):([^@]+)@(.+)", os.getenv("CLOUDINARY_URL"))
+            if m:
+                cloudinary.config(
+                    api_key=m.group(1),
+                    api_secret=m.group(2),
+                    cloud_name=m.group(3),
+                    secure=True
+                )
+        except Exception:
+            pass
+
     if not os.getenv("CLOUDINARY_URL") and not (os.getenv("CLOUDINARY_CLOUD_NAME") and os.getenv("CLOUDINARY_API_KEY") and os.getenv("CLOUDINARY_API_SECRET")):
         st.warning("Cloudinary credentials not found in environment variables. Image uploads will fail.")
     
