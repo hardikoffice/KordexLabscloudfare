@@ -10,39 +10,12 @@ load_dotenv()
 DEFAULT_API_URL = "https://kordexlabs.onrender.com/api/blogs"
 API_URL = os.getenv("CMS_API_URL", DEFAULT_API_URL)
 
-# Optional Cloudinary Setup
-try:
-    import cloudinary
-    import cloudinary.uploader
-    
-    # Try to configure cloudinary using individual credentials if URL fails or isn't picked up
-    cloudinary.config(
-        cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME", ""),
-        api_key = os.getenv("CLOUDINARY_API_KEY", ""),
-        api_secret = os.getenv("CLOUDINARY_API_SECRET", ""),
-        secure = True
-    )
+# Optional ImgBB Setup
+IMGBB_API_KEY = os.getenv("IMGBB_API_KEY")
+IMGBB_AVAILABLE = bool(IMGBB_API_KEY)
 
-    if os.getenv("CLOUDINARY_URL"):
-        try:
-            import re
-            m = re.match(r"cloudinary://([^:]+):([^@]+)@(.+)", os.getenv("CLOUDINARY_URL"))
-            if m:
-                cloudinary.config(
-                    api_key=m.group(1),
-                    api_secret=m.group(2),
-                    cloud_name=m.group(3),
-                    secure=True
-                )
-        except Exception:
-            pass
-
-    if not os.getenv("CLOUDINARY_URL") and not (os.getenv("CLOUDINARY_CLOUD_NAME") and os.getenv("CLOUDINARY_API_KEY") and os.getenv("CLOUDINARY_API_SECRET")):
-        st.warning("Cloudinary credentials not found in environment variables. Image uploads will fail.")
-    
-    CLOUDINARY_AVAILABLE = True
-except ImportError:
-    CLOUDINARY_AVAILABLE = False
+if not IMGBB_AVAILABLE:
+    st.warning("ImgBB credentials not found in environment variables. Image uploads will fall back to URLs only.")
 
 st.set_page_config(page_title="KordexLabs CMS", layout="wide")
 
@@ -91,8 +64,8 @@ try:
 except Exception:
     st.sidebar.caption("Could not connect to fetch articles.")
 
-if not CLOUDINARY_AVAILABLE:
-    st.warning("⚠️ 'cloudinary' module not found. Image uploads are disabled. Run: `pip install -r requirements.txt`")
+if not IMGBB_AVAILABLE:
+    st.warning("⚠️ IMGBB_API_KEY not found in `.env`. Image uploads are disabled.")
 
 # --- Publish Form ---
 with st.form("blog_form"):
@@ -107,7 +80,7 @@ with st.form("blog_form"):
     
     tags_str = st.text_input("Tags (comma separated)", placeholder="AI, Machine Learning, Trending")
     
-    hero_image = st.file_uploader("Header Image", type=["jpg", "jpeg", "png", "webp"], disabled=not CLOUDINARY_AVAILABLE)
+    hero_image = st.file_uploader("Header Image", type=["jpg", "jpeg", "png", "webp", "gif"], disabled=not IMGBB_AVAILABLE)
     image_url_input = st.text_input("Or Image URL", placeholder="https://images.unsplash.com/...")
     
     content = st.text_area("Content (Markdown)", height=400, placeholder="Write your blog content here using markdown...")
@@ -121,21 +94,34 @@ if submit:
         with st.spinner("Publishing..."):
             final_image_url = image_url_input
             
-            # Handle Upload to Cloudinary if file provided
-            if hero_image and CLOUDINARY_AVAILABLE:
+            # Handle Upload to ImgBB if file provided
+            if hero_image and IMGBB_AVAILABLE:
                 try:
-                    # Upload file to Cloudinary
-                    st.info("Uploading image to Cloudinary...")
-                    # Streamlit's UploadedFile is a subclass of BytesIO that cloudinary handles natively, but it's safer to read the bytes directly or pass raw bytes
-                    # Since we are sending a buffer we must use the 'read()' method or read all bytes natively
-                    image_bytes = hero_image.read()
-                    upload_result = cloudinary.uploader.upload(image_bytes)
-                    final_image_url = upload_result.get("secure_url", image_url_input)
-                    st.success("Image uploaded successfully!")
+                    # Upload file to ImgBB
+                    st.info("Uploading image to ImgBB...")
+                    
+                    import base64
+                    image_base64 = base64.b64encode(hero_image.read()).decode('utf-8')
+                    
+                    upload_response = requests.post(
+                        "https://api.imgbb.com/1/upload",
+                        data={
+                            "key": IMGBB_API_KEY,
+                            "image": image_base64
+                        },
+                        timeout=30
+                    )
+                    
+                    if upload_response.status_code == 200:
+                        upload_result = upload_response.json()
+                        final_image_url = upload_result["data"]["url"]
+                        st.success("Image uploaded successfully!")
+                    else:
+                        st.error(f"Image upload failed with status {upload_response.status_code}: {upload_response.text}")
                 except Exception as e:
-                    st.error(f"Image upload failed: {e}")
-            elif hero_image and not CLOUDINARY_AVAILABLE:
-                st.error("Cannot upload image because 'cloudinary' library is missing.")
+                    st.error(f"Image upload error: {e}")
+            elif hero_image and not IMGBB_AVAILABLE:
+                st.error("Cannot upload image because 'IMGBB_API_KEY' is missing.")
             
             payload = {
                 "title": title,
