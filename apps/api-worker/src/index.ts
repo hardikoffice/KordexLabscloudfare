@@ -216,7 +216,9 @@ app.post('/api/images/upload', async (c) => {
   const r2Service = new R2Service(c.env)
   const key = await r2Service.uploadBinding(c.env.IMAGES, fileName, fileData, file.type)
   
-  const url = c.env.PUBLIC_BUCKET_URL ? `${c.env.PUBLIC_BUCKET_URL}/${key}` : `/api/images/${key}`
+  const requestUrl = new URL(c.req.url)
+  const baseUrl = `${requestUrl.protocol}//${requestUrl.host}`
+  const url = c.env.PUBLIC_BUCKET_URL ? `${c.env.PUBLIC_BUCKET_URL}/${key}` : `${baseUrl}/api/images/${key}`
   return c.json({ success: true, url, key })
 })
 

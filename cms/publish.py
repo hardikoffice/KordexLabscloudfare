@@ -7,12 +7,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configuration — support both local and remote backends
-DEFAULT_API_URL = "https://kordexlabs.onrender.com/api/blogs"
+# Default to live worker
+DEFAULT_API_URL = "https://kordexlabs-api.hardikoffice260706.workers.dev/api/blogs"
 API_URL = os.getenv("CMS_API_URL", DEFAULT_API_URL)
 
 # R2 Setup (via Hono Worker)
 # We use the Hono worker's API for uploads
-IMGBB_AVAILABLE = False # Legacy
 R2_AVAILABLE = True
 
 st.set_page_config(page_title="KordexLabs CMS", layout="wide")
@@ -24,9 +24,9 @@ st.write("Publish daily AI news directly to the website.")
 st.sidebar.title("⚙️ Settings")
 
 # API URL toggle
-use_local = st.sidebar.toggle("Use Local Backend", value=False)
+use_local = st.sidebar.toggle("Use Local Backend", value=True)
 if use_local:
-    API_URL = "http://localhost:8000/api/blogs"
+    API_URL = "http://localhost:8787/api/blogs"
     st.sidebar.success(f"🟢 Using: Local (`{API_URL}`)")
 else:
     st.sidebar.info(f"🌐 Using: Remote (`{API_URL}`)")
@@ -92,8 +92,7 @@ try:
 except Exception:
     st.sidebar.caption("Could not connect to fetch articles.")
 
-if not IMGBB_AVAILABLE:
-    st.warning("⚠️ IMGBB_API_KEY not found in `.env`. Image uploads are disabled.")
+# Using R2 exclusively for image storage
 
 # --- Publish Form ---
 with st.form("blog_form"):
@@ -108,7 +107,7 @@ with st.form("blog_form"):
     
     tags_str = st.text_input("Tags (comma separated)", placeholder="AI, Machine Learning, Trending")
     
-    hero_image = st.file_uploader("Header Image", type=["jpg", "jpeg", "png", "webp", "gif"], disabled=not IMGBB_AVAILABLE)
+    hero_image = st.file_uploader("Header Image", type=["jpg", "jpeg", "png", "webp", "gif"])
     image_url_input = st.text_input("Or Image URL", placeholder="https://images.unsplash.com/...")
     
     content = st.text_area("Content (Markdown)", height=400, placeholder="Write your blog content here using markdown...")
