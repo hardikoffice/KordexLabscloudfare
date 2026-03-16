@@ -1,6 +1,6 @@
+"use client";
 export const runtime = "edge";
 
-"use client";
 import { stocks } from "@/lib/data/stocks";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
