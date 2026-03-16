@@ -18,6 +18,10 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'huggingface.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'kordexlabs-api.hardikoffice260706.workers.dev',
       }
     ],
   },
