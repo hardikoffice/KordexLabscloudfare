@@ -8,7 +8,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useEffect, Suspense } from "react";
 import Image from "next/image";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787/api";
 
 function SignupContent() {
     const [fullName, setFullName] = useState("");
@@ -34,7 +34,7 @@ function SignupContent() {
         setError("");
 
         try {
-            const response = await fetch(`${API_URL}/api/auth/signup`, {
+            const response = await fetch(`${API_URL}/auth/signup`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ full_name: fullName, email, password }),
@@ -47,7 +47,7 @@ function SignupContent() {
             }
 
             // Automatically login after signup
-            const loginResponse = await fetch(`${API_URL}/api/auth/login`, {
+            const loginResponse = await fetch(`${API_URL}/auth/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ email, password }),

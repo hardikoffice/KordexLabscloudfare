@@ -1,4 +1,5 @@
 import { Hono } from 'hono'
+import { cors } from 'hono/cors'
 import { jwt, sign, verify } from 'hono/jwt'
 import { R2Service } from './lib/r2'
 import { hashPassword, verifyPassword } from './lib/auth'
@@ -11,6 +12,9 @@ type Bindings = {
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
+
+// Add CORS middleware
+app.use('*', cors())
 
 // --- Utilities & Middleware ---
 const SECRET = 'kordexlabs_very_secret_key_change_in_production' // Default fallback
