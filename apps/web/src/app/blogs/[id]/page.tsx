@@ -1,4 +1,6 @@
 "use client";
+export const runtime = "edge";
+
 import { Blog, fetchBlogById } from "@/lib/api";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";

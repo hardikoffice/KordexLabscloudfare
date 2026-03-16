@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 "use client";
 import { stocks } from "@/lib/data/stocks";
 import { useParams } from "next/navigation";
