@@ -10,7 +10,7 @@ interface DashboardStore {
   fetchSavedBlogs: () => Promise<void>;
 }
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000") + "/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787/api";
 
 export const useDashboardStore = create<DashboardStore>((set, get) => ({
   savedBlogs: [],
@@ -77,7 +77,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
           addNotification("Failed to remove blog", "error");
         }
       } else {
-        const res = await fetch(`${API_BASE}/saved-blogs/`, {
+        const res = await fetch(`${API_BASE}/saved-blogs`, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -125,7 +125,7 @@ export const useDashboardStore = create<DashboardStore>((set, get) => ({
           addNotification(`Failed to remove ${ticker}`, "error");
         }
       } else {
-        const res = await fetch(`${API_BASE}/favorites/`, {
+        const res = await fetch(`${API_BASE}/favorites`, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${token}`,

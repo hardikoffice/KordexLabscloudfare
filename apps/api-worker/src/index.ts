@@ -33,7 +33,7 @@ const getSecret = (env: Bindings) => env.JWT_SECRET || DEFAULT_SECRET
 
 const authMiddleware = async (c: any, next: any) => {
   const secret = getSecret(c.env)
-  return jwt({ secret })(c, next)
+  return jwt({ secret, alg: 'HS256' })(c, next)
 }
 
 // --- Health Check ---
@@ -67,7 +67,7 @@ app.post('/api/auth/login', async (c) => {
     sub: user.email,
     exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // 24 hours
   }
-  const token = await sign(payload, getSecret(c.env))
+  const token = await sign(payload, getSecret(c.env), 'HS256')
   return c.json({ access_token: token, token_type: 'bearer' })
 })
 
