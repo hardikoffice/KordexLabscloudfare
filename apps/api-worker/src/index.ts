@@ -16,14 +16,24 @@ const app = new Hono<{ Bindings: Bindings }>()
 // Add CORS middleware
 app.use('*', cors())
 
-// --- Utilities & Middleware ---
-const SECRET = 'kordexlabs_very_secret_key_change_in_production' // Default fallback
+// Global Error Handler
+app.onError((err, c) => {
+  console.error(err)
+  return c.json({ 
+    error: 'Internal Server Error',
+    message: err.message,
+    stack: err.stack 
+  }, 500)
+})
 
-const authMiddleware = (c: any, next: any) => {
-  const jwtMiddleware = jwt({
-    secret: c.env.JWT_SECRET || SECRET,
-  })
-  return jwtMiddleware(c, next)
+// --- Utilities & Middleware ---
+const DEFAULT_SECRET = 'kordexlabs_very_secret_key_change_in_production'
+
+const getSecret = (env: Bindings) => env.JWT_SECRET || DEFAULT_SECRET
+
+const authMiddleware = async (c: any, next: any) => {
+  const secret = getSecret(c.env)
+  return jwt({ secret })(c, next)
 }
 
 // --- Health Check ---
@@ -57,7 +67,7 @@ app.post('/api/auth/login', async (c) => {
     sub: user.email,
     exp: Math.floor(Date.now() / 1000) + 60 * 60 * 24, // 24 hours
   }
-  const token = await sign(payload, c.env.JWT_SECRET || SECRET)
+  const token = await sign(payload, getSecret(c.env))
   return c.json({ access_token: token, token_type: 'bearer' })
 })
 

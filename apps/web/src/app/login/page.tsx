@@ -55,7 +55,7 @@ function LoginContent() {
                 login(userData, data.access_token);
                 router.push(callback);
             } else {
-                throw new Error("Failed to fetch user data after login");
+                throw new Error(userData.message || userData.error || "Failed to fetch user data after login");
             }
         } catch (err: any) {
             setError(err.message);
