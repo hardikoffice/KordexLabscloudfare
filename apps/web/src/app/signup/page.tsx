@@ -8,7 +8,7 @@ import { useAuthStore } from "@/store/authStore";
 import { useEffect, Suspense } from "react";
 import Image from "next/image";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
 
 function SignupContent() {
     const [fullName, setFullName] = useState("");
