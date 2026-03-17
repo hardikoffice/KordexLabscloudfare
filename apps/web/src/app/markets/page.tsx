@@ -12,8 +12,7 @@ export default function MarketsPage() {
     React.useEffect(() => {
         const fetchMarketSnapshot = async () => {
             try {
-                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8787/api';
-                const resp = await fetch(`${API_URL}/stocks`);
+                const resp = await fetch('/api/stocks');
                 if (!resp.ok) throw new Error('Failed to fetch snapshot');
                 const data = await resp.json();
                 setMarketData(data);

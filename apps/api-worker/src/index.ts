@@ -196,47 +196,62 @@ const SYNC_TICKERS = ["NVDA", "MSFT", "GOOGL", "META", "AMZN", "AMD", "TSM", "PL
 
 async function syncStockData(env: Bindings) {
   const apiKey = env.POLYGON_API_KEY
-  if (!apiKey) throw new Error("POLYGON_API_KEY missing")
+  if (!apiKey) {
+    console.error("POLYGON_API_KEY missing - sync aborted")
+    return
+  }
 
-  // Use yesterday's date for daily close (Polygon free tier often has a day delay)
-  const yesterday = new Date()
-  yesterday.setDate(yesterday.getDate() - 1)
-  const dateStr = yesterday.toISOString().split('T')[0]
+  // Fetch last 30 days to ensure data exists even on weekends/holidays and for sparklines
+  const to = new Date()
+  to.setDate(to.getDate() - 1)
+  const from = new Date()
+  from.setDate(from.getDate() - 30)
+  
+  const fromStr = from.toISOString().split('T')[0]
+  const toStr = to.toISOString().split('T')[0]
 
-  console.log(`Syncing data for ${dateStr}...`)
+  console.log(`Starting sync from ${fromStr} to ${toStr}...`)
 
   for (const ticker of SYNC_TICKERS) {
     try {
-      // Polygon uses different prefixes for indices sometimes, but let's try direct first
-      // For indices in free tier, it's often more reliable to fetch daily aggregates
-      const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/day/${dateStr}/${dateStr}?adjusted=true&sort=asc&apiKey=${apiKey}`
+      console.log(`Syncing ${ticker}...`)
+      const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/day/${fromStr}/${toStr}?adjusted=true&sort=asc&limit=50&apiKey=${apiKey}`
       const resp = await fetch(url)
       const data: any = await resp.json()
 
       if (data.results && data.results.length > 0) {
-        const res = data.results[0]
-        const timestamp = Math.floor(new Date(dateStr).getTime() / 1000)
-        
-        await env.DB.prepare(
-          'INSERT OR REPLACE INTO stock_prices (ticker, timestamp, open, high, low, close, volume) VALUES (?, ?, ?, ?, ?, ?, ?)'
-        ).bind(ticker, timestamp, res.o, res.h, res.l, res.c, res.v).run()
-        
-        console.log(`Synced ${ticker}`)
+        console.log(`Found ${data.results.length} bars for ${ticker}`)
+        for (const res of data.results) {
+          const timestamp = Math.floor(res.t / 1000)
+          await env.DB.prepare(
+            'INSERT OR REPLACE INTO stock_prices (ticker, timestamp, open, high, low, close, volume) VALUES (?, ?, ?, ?, ?, ?, ?)'
+          ).bind(ticker, timestamp, res.o, res.h, res.l, res.c, res.v).run()
+        }
+        console.log(`Successfully saved ${ticker}`)
+      } else {
+        console.warn(`No data found for ${ticker} in range ${fromStr} to ${toStr}. Status: ${data.status}`)
       }
-      // Respect rate limit (5/min) - wait 12s between calls if not in a burst
+      
+      // Respect rate limit (5/min) - wait 12s between tickers
       await new Promise(r => setTimeout(r, 12000))
     } catch (e) {
-      console.error(`Failed to sync ${ticker}:`, e)
+      console.error(`Fatal error syncing ${ticker}:`, e)
     }
   }
+  console.log("Sync process completed.")
 }
 
 app.get('/api/stocks/sync', async (c) => {
-  // Manual trigger (could be protected by a secret header)
+  // Manual trigger (protected by secret header or query param)
   const auth = c.req.header('Authorization')
-  if (auth !== `Bearer ${getSecret(c.env)}`) return c.json({ error: 'Unauthorized' }, 401)
+  const querySecret = c.req.query('secret')
+  const secret = getSecret(c.env)
   
-  // Run sync in background (Cloudflare Workers allow this via waitUntil if needed, but Hono is async)
+  if (auth !== `Bearer ${secret}` && querySecret !== secret) {
+    return c.json({ error: 'Unauthorized' }, 401)
+  }
+  
+  // Run sync in background
   c.executionCtx.waitUntil(syncStockData(c.env))
   return c.json({ message: 'Sync started in background' })
 })
