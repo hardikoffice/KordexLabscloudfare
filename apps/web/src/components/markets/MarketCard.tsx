@@ -10,33 +10,16 @@ interface MarketCardProps {
   name: string;
   exchange: string;
   index?: number;
+  stats?: {
+    latest: number;
+    change: number;
+    changePercent: number;
+    history: number[];
+  } | null;
+  loading?: boolean;
 }
 
-export function MarketCard({ ticker, name, exchange, index = 0 }: MarketCardProps) {
-  // Staggered delay to respect 5 calls/min limit (basic version)
-  const [shouldFetch, setShouldFetch] = useState(false);
-  
-  useEffect(() => {
-    // Delay each card's fetch by 12 seconds * index to spread across 2 minutes
-    // Alternatively, just stagger by 2s to not make the user wait too long but reduce bursts
-    const timer = setTimeout(() => {
-      setShouldFetch(true);
-    }, index * 2000); 
-    return () => clearTimeout(timer);
-  }, [index]);
-
-  const { data, loading, error } = useStockData(ticker, '1W');
-
-  const stats = useMemo(() => {
-    if (!data || data.length < 2) return null;
-    const latest = data[data.length - 1].close;
-    const first = data[0].close;
-    const change = latest - first;
-    const changePercent = (change / first) * 100;
-    const history = data.map(d => d.close);
-    return { latest, change, changePercent, history };
-  }, [data]);
-
+export function MarketCard({ ticker, name, exchange, index = 0, stats, loading }: MarketCardProps) {
   const MiniChart = ({ data: sparkData, positive }: { data: number[]; positive: boolean }) => {
     if (!sparkData || sparkData.length === 0) return null;
     const min = Math.min(...sparkData);
@@ -59,15 +42,6 @@ export function MarketCard({ ticker, name, exchange, index = 0 }: MarketCardProp
       </svg>
     );
   };
-
-  if (error && error.includes('429')) {
-    return (
-      <div className="glass-card p-5 opacity-60">
-        <h3 className="font-bold text-[var(--muted-foreground)]">{ticker}</h3>
-        <p className="text-xs text-[var(--danger)]">Rate limited...</p>
-      </div>
-    );
-  }
 
   return (
     <motion.div

@@ -8,6 +8,7 @@ type Bindings = {
   DB: D1Database
   IMAGES: R2Bucket
   JWT_SECRET: string
+  POLYGON_API_KEY: string
   PUBLIC_BUCKET_URL?: string
 }
 
@@ -190,14 +191,128 @@ app.delete('/api/saved-blogs/:blog_id', authMiddleware, async (c) => {
   return c.json({ message: 'Blog removed from saved list' })
 })
 
-// --- Static Data (Stocks & Tools) ---
-const STOCKS = [
-  {ticker:"NVDA", company_name:"NVIDIA Corporation", exchange:"NASDAQ", asset_type:"Stock", price:875.30, change:12.45, change_percent:1.44},
-  {ticker:"MSFT", company_name:"Microsoft Corporation", exchange:"NASDAQ", asset_type:"Stock", price:452.18, change:-3.22, change_percent:-0.71},
-  {ticker:"GOOGL", company_name:"Alphabet Inc.", exchange:"NASDAQ", asset_type:"Stock", price:178.92, change:2.15, change_percent:1.22},
-  {ticker:"META", company_name:"Meta Platforms Inc.", exchange:"NASDAQ", asset_type:"Stock", price:612.47, change:8.33, change_percent:1.38},
-  {ticker:"AMD", company_name:"Advanced Micro Devices", exchange:"NASDAQ", asset_type:"Stock", price:178.50, change:5.20, change_percent:3.0},
-]
+// --- Stocks Routes ---
+const SYNC_TICKERS = ["NVDA", "MSFT", "GOOGL", "META", "AMZN", "AMD", "TSM", "PLTR", "I:NSEI", "I:IXIC"]
+
+async function syncStockData(env: Bindings) {
+  const apiKey = env.POLYGON_API_KEY
+  if (!apiKey) throw new Error("POLYGON_API_KEY missing")
+
+  // Use yesterday's date for daily close (Polygon free tier often has a day delay)
+  const yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 1)
+  const dateStr = yesterday.toISOString().split('T')[0]
+
+  console.log(`Syncing data for ${dateStr}...`)
+
+  for (const ticker of SYNC_TICKERS) {
+    try {
+      // Polygon uses different prefixes for indices sometimes, but let's try direct first
+      // For indices in free tier, it's often more reliable to fetch daily aggregates
+      const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/day/${dateStr}/${dateStr}?adjusted=true&sort=asc&apiKey=${apiKey}`
+      const resp = await fetch(url)
+      const data: any = await resp.json()
+
+      if (data.results && data.results.length > 0) {
+        const res = data.results[0]
+        const timestamp = Math.floor(new Date(dateStr).getTime() / 1000)
+        
+        await env.DB.prepare(
+          'INSERT OR REPLACE INTO stock_prices (ticker, timestamp, open, high, low, close, volume) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        ).bind(ticker, timestamp, res.o, res.h, res.l, res.c, res.v).run()
+        
+        console.log(`Synced ${ticker}`)
+      }
+      // Respect rate limit (5/min) - wait 12s between calls if not in a burst
+      await new Promise(r => setTimeout(r, 12000))
+    } catch (e) {
+      console.error(`Failed to sync ${ticker}:`, e)
+    }
+  }
+}
+
+app.get('/api/stocks/sync', async (c) => {
+  // Manual trigger (could be protected by a secret header)
+  const auth = c.req.header('Authorization')
+  if (auth !== `Bearer ${getSecret(c.env)}`) return c.json({ error: 'Unauthorized' }, 401)
+  
+  // Run sync in background (Cloudflare Workers allow this via waitUntil if needed, but Hono is async)
+  c.executionCtx.waitUntil(syncStockData(c.env))
+  return c.json({ message: 'Sync started in background' })
+})
+
+app.get('/api/stocks', async (c) => {
+  // Fetch latest prices and sparkline (last 7 days) from D1
+  const { results } = await c.env.DB.prepare(`
+    SELECT ticker, close, timestamp 
+    FROM stock_prices 
+    WHERE timestamp >= ?
+    ORDER BY ticker, timestamp ASC
+  `).bind(Math.floor(Date.now() / 1000) - 7 * 24 * 3600).all<any>()
+
+  const metadataMap: Record<string, any> = {
+    "NVDA": { company_name: "NVIDIA Corporation", exchange: "NASDAQ", asset_type: "Stock" },
+    "MSFT": { company_name: "Microsoft Corporation", exchange: "NASDAQ", asset_type: "Stock" },
+    "GOOGL": { company_name: "Alphabet Inc.", exchange: "NASDAQ", asset_type: "Stock" },
+    "META": { company_name: "Meta Platforms Inc.", exchange: "NASDAQ", asset_type: "Stock" },
+    "AMZN": { company_name: "Amazon.com Inc.", exchange: "NASDAQ", asset_type: "Stock" },
+    "AMD": { company_name: "Advanced Micro Devices", exchange: "NASDAQ", asset_type: "Stock" },
+    "TSM": { company_name: "Taiwan Semiconductor", exchange: "NYSE", asset_type: "Stock" },
+    "PLTR": { company_name: "Palantir Technologies", exchange: "NYSE", asset_type: "Stock" },
+    "I:NSEI": { company_name: "Nifty 50", exchange: "NSE", asset_type: "Index" },
+    "I:IXIC": { company_name: "NASDAQ Composite", exchange: "NASDAQ", asset_type: "Index" },
+  }
+
+  // Group by ticker
+  const grouped = results.reduce((acc, curr) => {
+    if (!acc[curr.ticker]) {
+      acc[curr.ticker] = {
+        ticker: curr.ticker,
+        price: 0,
+        history: [],
+        ...(metadataMap[curr.ticker] || {})
+      }
+    }
+    acc[curr.ticker].history.push(curr.close)
+    acc[curr.ticker].price = curr.close // Updates to last entry
+    return acc
+  }, {} as Record<string, any>)
+
+  const finalResults = Object.values(grouped).map((r: any) => {
+    const first = r.history[0] || r.price
+    const change = r.price - first
+    return {
+      ...r,
+      change,
+      change_percent: first !== 0 ? (change / first) * 100 : 0
+    }
+  })
+
+  return c.json(finalResults)
+})
+
+app.get('/api/stocks/:ticker/history', async (c) => {
+  const ticker = c.req.param('ticker')
+  const from = c.req.query('from') // Unix timestamp (s)
+  const to = c.req.query('to')     // Unix timestamp (s)
+
+  let query = 'SELECT timestamp as time, open, high, low, close, volume FROM stock_prices WHERE ticker = ?'
+  const params: any[] = [ticker]
+
+  if (from) {
+    query += ' AND timestamp >= ?'
+    params.push(parseInt(from))
+  }
+  if (to) {
+    query += ' AND timestamp <= ?'
+    params.push(parseInt(to))
+  }
+
+  query += ' ORDER BY timestamp ASC'
+
+  const { results } = await c.env.DB.prepare(query).bind(...params).all()
+  return c.json(results)
+})
 
 const TOOLS = [
   {id:"1", name:"ChatGPT", category:"LLM / Chatbot", pros:["Versatile", "Large plugin ecosystem"], cons:["Can hallucinate", "Expensive at scale"], pricing_tier:"Freemium — $20/mo Pro", logo_url:""},
@@ -241,4 +356,10 @@ app.get('/api/images/:key', async (c) => {
   return new Response(object.body, { headers })
 })
 
-export default app
+// --- Export App & Scheduled Handler ---
+export default {
+  fetch: app.fetch,
+  async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
+    ctx.waitUntil(syncStockData(env))
+  }
+}
