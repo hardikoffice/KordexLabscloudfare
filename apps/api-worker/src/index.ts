@@ -197,11 +197,11 @@ const SYNC_TICKERS = ["NVDA", "MSFT", "GOOGL", "META", "AMZN", "AMD", "TSM", "PL
 async function syncStockData(env: Bindings) {
   const apiKey = env.POLYGON_API_KEY
   if (!apiKey) {
-    console.error("POLYGON_API_KEY missing - sync aborted")
+    console.error("[Sync] CRITICAL: POLYGON_API_KEY is missing from environment")
     return
   }
 
-  // Fetch last 30 days to ensure data exists even on weekends/holidays and for sparklines
+  console.log("[Sync] Starting sync for 10 tickers over 30 days...")
   const to = new Date()
   to.setDate(to.getDate() - 1)
   const from = new Date()
@@ -210,35 +210,44 @@ async function syncStockData(env: Bindings) {
   const fromStr = from.toISOString().split('T')[0]
   const toStr = to.toISOString().split('T')[0]
 
-  console.log(`Starting sync from ${fromStr} to ${toStr}...`)
-
   for (const ticker of SYNC_TICKERS) {
     try {
-      console.log(`Syncing ${ticker}...`)
+      console.log(`[Sync] Fetching ${ticker} from ${fromStr} to ${toStr}...`)
       const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/day/${fromStr}/${toStr}?adjusted=true&sort=asc&limit=50&apiKey=${apiKey}`
+      
       const resp = await fetch(url)
-      const data: any = await resp.json()
-
-      if (data.results && data.results.length > 0) {
-        console.log(`Found ${data.results.length} bars for ${ticker}`)
-        for (const res of data.results) {
-          const timestamp = Math.floor(res.t / 1000)
-          await env.DB.prepare(
-            'INSERT OR REPLACE INTO stock_prices (ticker, timestamp, open, high, low, close, volume) VALUES (?, ?, ?, ?, ?, ?, ?)'
-          ).bind(ticker, timestamp, res.o, res.h, res.l, res.c, res.v).run()
-        }
-        console.log(`Successfully saved ${ticker}`)
-      } else {
-        console.warn(`No data found for ${ticker} in range ${fromStr} to ${toStr}. Status: ${data.status}`)
+      if (!resp.ok) {
+        console.error(`[Sync] API Error for ${ticker}: HTTP ${resp.status} ${resp.statusText}`)
+        continue
       }
       
-      // Respect rate limit (5/min) - wait 12s between tickers
+      const data: any = await resp.json()
+      if (data.status === "OK" && data.results && data.results.length > 0) {
+        console.log(`[Sync] Found ${data.results.length} data points for ${ticker}. Saving to D1...`)
+        let savedCount = 0
+        for (const res of data.results) {
+          const timestamp = Math.floor(res.t / 1000)
+          try {
+            await env.DB.prepare(
+              'INSERT OR REPLACE INTO stock_prices (ticker, timestamp, open, high, low, close, volume) VALUES (?, ?, ?, ?, ?, ?, ?)'
+            ).bind(ticker, timestamp, res.o, res.h, res.l, res.c, res.v).run()
+            savedCount++
+          } catch (dbErr) {
+            console.error(`[Sync] DB Insert failed for ${ticker} at ${timestamp}:`, dbErr)
+          }
+        }
+        console.log(`[Sync] Successfully saved ${savedCount}/${data.results.length} points for ${ticker}`)
+      } else {
+        console.warn(`[Sync] No data for ${ticker}. Polygon Status: ${data.status || 'Unknown'}. Info: ${data.error || 'None'}`)
+      }
+      
+      console.log(`[Sync] Waiting 12s for rate limits...`)
       await new Promise(r => setTimeout(r, 12000))
     } catch (e) {
-      console.error(`Fatal error syncing ${ticker}:`, e)
+      console.error(`[Sync] Fatal error for ${ticker}:`, e)
     }
   }
-  console.log("Sync process completed.")
+  console.log("[Sync] All tickers processed.")
 }
 
 app.get('/api/stocks/sync', async (c) => {

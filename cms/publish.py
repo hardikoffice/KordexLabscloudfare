@@ -8,7 +8,7 @@ load_dotenv()
 
 # Configuration — support both local and remote backends
 # Default to live worker
-DEFAULT_API_URL = "https://kordexlabs-api.hardikoffice260706.workers.dev/api/blogs"
+DEFAULT_API_URL = "https://kordexlabs-api.hardikoffice.workers.dev/api/blogs"
 API_URL = os.getenv("CMS_API_URL", DEFAULT_API_URL)
 
 # R2 Setup (via Hono Worker)
@@ -23,8 +23,8 @@ st.write("Publish daily AI news directly to the website.")
 # --- Sidebar ---
 st.sidebar.title("⚙️ Settings")
 
-# API URL toggle
-use_local = st.sidebar.toggle("Use Local Backend", value=True)
+# API URL toggle (Default to Remote for deployment)
+use_local = st.sidebar.toggle("Use Local Backend", value=False)
 if use_local:
     API_URL = "http://localhost:8787/api/blogs"
     st.sidebar.success(f"🟢 Using: Local (`{API_URL}`)")
@@ -44,6 +44,31 @@ except requests.exceptions.ConnectionError:
     st.sidebar.error("❌ Cannot connect to backend — is it running?")
 except Exception as e:
     st.sidebar.error(f"❌ Connection error: {e}")
+
+# Market Data Management
+st.sidebar.markdown("---")
+st.sidebar.subheader("📊 Market Data")
+st.sidebar.write("Fetch latest AI stock prices from Polygon.io.")
+
+if st.sidebar.button("🔄 Sync Markets"):
+    try:
+        # Construct the Base API URL (remove /blogs)
+        base_api = API_URL.replace("/blogs", "").rstrip("/")
+        # We use the default secret key from the worker
+        SECRET_KEY = "kordexlabs_very_secret_key_change_in_production"
+        sync_url = f"{base_api}/stocks/sync?secret={SECRET_KEY}"
+        
+        with st.sidebar.spinner("Triggering sync..."):
+            sync_res = requests.get(sync_url, timeout=30)
+            if sync_res.status_code == 200:
+                st.sidebar.success("✅ Sync started in background!")
+                st.sidebar.info("The worker is now fetching 30 days of data for 10 stocks. This takes exactly 2 minutes.")
+            else:
+                st.sidebar.error(f"Failed: {sync_res.status_code}")
+                st.sidebar.write(f"URL Attempted: `{sync_url.split('?')[0]}`")
+                st.sidebar.code(sync_res.text)
+    except Exception as e:
+        st.sidebar.error(f"Error: {e}")
 
 # Existing blogs
 st.sidebar.markdown("---")
