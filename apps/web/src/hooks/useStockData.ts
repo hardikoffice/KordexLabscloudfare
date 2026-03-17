@@ -24,11 +24,11 @@ export function useStockData(ticker: string, timeframe: Timeframe) {
     switch (tf) {
       case '1D':
         from = to - 24 * 60 * 60;
-        resolution = '5';
+        resolution = '15'; 
         break;
       case '1W':
         from = to - 7 * 24 * 60 * 60;
-        resolution = '60';
+        resolution = 'D'; 
         break;
       case '1Y':
         from = to - 365 * 24 * 60 * 60;
