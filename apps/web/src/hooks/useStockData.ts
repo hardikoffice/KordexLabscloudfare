@@ -17,46 +17,52 @@ export function useStockData(ticker: string, timeframe: Timeframe) {
   const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const getParams = useCallback((tf: Timeframe) => {
-    const to = Math.floor(Date.now() / 1000);
-    let from: number;
-    let resolution: string;
+    const toDate = new Date();
+    const to = toDate.toISOString().split('T')[0];
+    let fromDate = new Date();
+    let multiplier = '1';
+    let timespan = 'day';
 
     switch (tf) {
       case '1D':
-        from = to - 24 * 60 * 60;
-        resolution = '15'; 
+        fromDate.setDate(toDate.getDate() - 1);
+        multiplier = '30';
+        timespan = 'minute';
         break;
       case '1W':
-        from = to - 7 * 24 * 60 * 60;
-        resolution = 'D'; 
+        fromDate.setDate(toDate.getDate() - 7);
+        multiplier = '1';
+        timespan = 'hour';
         break;
       case '1Y':
-        from = to - 365 * 24 * 60 * 60;
-        resolution = 'D';
+        fromDate.setFullYear(toDate.getFullYear() - 1);
+        multiplier = '1';
+        timespan = 'day';
         break;
       case '5Y':
-        from = to - 5 * 365 * 24 * 60 * 60;
-        resolution = 'W';
+        fromDate.setFullYear(toDate.getFullYear() - 5);
+        multiplier = '1';
+        timespan = 'week';
         break;
       case 'All':
-        from = to - 20 * 365 * 24 * 60 * 60; // 20 years back
-        resolution = 'M';
+        fromDate.setFullYear(toDate.getFullYear() - 20);
+        multiplier = '1';
+        timespan = 'month';
         break;
-      default:
-        from = to - 24 * 60 * 60;
-        resolution = 'D';
     }
-    return { from, to, resolution };
+    
+    const from = fromDate.toISOString().split('T')[0];
+    return { from, to, multiplier, timespan };
   }, []);
 
   const fetchData = useCallback(async (isInitial = false) => {
     if (isInitial) setLoading(true);
     setError(null);
 
-    const { from, to, resolution } = getParams(timeframe);
+    const { from, to, multiplier, timespan } = getParams(timeframe);
     
     try {
-      const response = await fetch(`/api/stocks/${ticker}?resolution=${resolution}&from=${from}&to=${to}`);
+      const response = await fetch(`/api/stocks/${ticker}?multiplier=${multiplier}&timespan=${timespan}&from=${from}&to=${to}`);
       if (!response.ok) {
         const errData = await response.json();
         throw new Error(errData.error || 'Failed to fetch data');
