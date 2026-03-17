@@ -8,7 +8,7 @@ load_dotenv()
 
 # Configuration — support both local and remote backends
 # Default to live worker
-DEFAULT_API_URL = "https://kordexlabs-api.hardikoffice.workers.dev/api/blogs"
+DEFAULT_API_URL = "https://kordexlabs-api.hardikoffice260706.workers.dev/api/blogs"
 API_URL = os.getenv("CMS_API_URL", DEFAULT_API_URL)
 
 # R2 Setup (via Hono Worker)
