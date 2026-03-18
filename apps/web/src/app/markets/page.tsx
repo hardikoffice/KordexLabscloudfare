@@ -4,6 +4,7 @@ import { stocks } from "@/lib/data/stocks";
 import { motion } from "framer-motion";
 import { TrendingUp, BarChart3 } from "lucide-react";
 import { MarketCard } from "@/components/markets/MarketCard";
+import { StockDisclaimer } from "@/components/markets/StockDisclaimer";
 
 export default function MarketsPage() {
     const [marketData, setMarketData] = React.useState<any[]>([]);
@@ -34,8 +35,10 @@ export default function MarketsPage() {
                 <h1 className="text-4xl md:text-5xl font-extrabold mb-4">
                     <span className="bg-gradient-to-r from-[var(--success)] to-[var(--secondary)] bg-clip-text text-transparent">AI Markets</span>
                 </h1>
-                <p className="text-[var(--muted-foreground)] text-lg">Track AI stocks and indices in real time.</p>
+                <p className="text-[var(--muted-foreground)] text-lg">Comprehensive tracking for AI focused assets.</p>
             </motion.div>
+
+            <StockDisclaimer />
 
             {/* Indices */}
             <h2 className="text-xl font-bold mb-6 flex items-center gap-2">

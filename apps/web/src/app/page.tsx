@@ -70,8 +70,8 @@ function HeroSection() {
             <br />
             <span>Revolution</span>
           </h1>
-          <p className="text-lg md:text-xl text-[var(--muted-foreground)] mb-8 max-w-2xl mx-auto">
-            Curated news, deep-dive tool comparisons, and real-time stock tracking — all in one immersive dashboard.
+        <p className="text-lg md:text-xl text-[var(--muted-foreground)] mb-8 max-w-2xl mx-auto">
+            Curated news, deep-dive tool comparisons, and daily stock tracking — all in one immersive dashboard.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/blogs" className="glow-btn pulse-glow flex items-center gap-2">

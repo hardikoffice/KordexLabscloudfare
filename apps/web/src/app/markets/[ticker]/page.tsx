@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import { useDashboardStore } from "@/lib/store";
 import { useAuthStore } from "@/store/authStore";
 import { StockChart } from "@/components/markets/StockChart";
+import { StockDisclaimer } from "@/components/markets/StockDisclaimer";
 
 export default function StockDetailPage() {
     const params = useParams();
@@ -61,8 +62,8 @@ export default function StockDetailPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
             >
-                {/* Real Chart Component */}
                 <div className="mb-12">
+                    <StockDisclaimer />
                     <StockChart ticker={ticker} />
                 </div>
 
@@ -89,7 +90,7 @@ export default function StockDetailPage() {
                     {/* Invest Now CTA */}
                     <div className="glass-card p-8 flex flex-col items-center justify-center text-center bg-gradient-to-br from-emerald-500/5 to-transparent border-emerald-500/10">
                         <h3 className="text-xl font-bold mb-2">Interested in {stock.ticker}?</h3>
-                        <p className="text-[var(--muted-foreground)] mb-6 text-sm">Start tracking this {stock.asset_type.toLowerCase()} and get real-time alerts.</p>
+                        <p className="text-[var(--muted-foreground)] mb-6 text-sm">Start tracking this {stock.asset_type.toLowerCase()} and get daily alerts.</p>
                         <button className="glow-btn pulse-glow w-full py-4 flex items-center justify-center gap-2">
                             <ExternalLink className="w-5 h-5" /> Trade Now
                         </button>
