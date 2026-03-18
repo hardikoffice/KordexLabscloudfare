@@ -137,6 +137,23 @@ with st.form("blog_form"):
     
     content = st.text_area("Content (Markdown)", height=400, placeholder="Write your blog content here using markdown...")
     
+    # --- TOC Preview and Tips ---
+    with st.expander("📝 Writing Tips & TOC Preview", expanded=False):
+        st.info("Use `## Heading` and `### Subheading` for your sections. They will automatically appear in the Table of Contents.")
+        st.markdown("---")
+        if content:
+            st.subheader("Detected Table of Contents")
+            detected_headings = [l.strip("# ") for l in content.split("\n") if l.startswith("## ") or l.startswith("### ")]
+            if detected_headings:
+                for h in detected_headings:
+                    st.write(f"• {h}")
+                st.success("TOC will be generated automatically!")
+            else:
+                st.warning("No headings detected. Use `##` or `###` to create sections.")
+        
+        st.markdown("---")
+        st.markdown("**Pro Tip:** Add `[TOC]` anywhere in your content to render a mini Table of Contents at that exact spot.")
+
     submit = st.form_submit_button("🚀 Publish Blog")
 
 if submit:

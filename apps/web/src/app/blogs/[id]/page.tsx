@@ -67,8 +67,54 @@ export default function BlogDetailPage() {
         }));
 
     // Simple markdown rendering
+    // Helper to parse links [text](url), bold **text**, and italic *text*
+    const parseInlineMarkdown = (text: string) => {
+        // This is a simple parser, but it handles the most common cases
+        const parts = text.split(/(\[.*?\]\(.*?\))|(\*\*.*?\*\*)|(\*.*?\*)/g).filter(Boolean);
+        return parts.map((part, i) => {
+            // Link [text](url)
+            const linkMatch = part.match(/^\[(.*?)\]\((.*?)\)$/);
+            if (linkMatch) {
+                return <a key={i} href={linkMatch[2]} target="_blank" rel="noopener noreferrer" className="text-[var(--primary)] hover:underline">{linkMatch[1]}</a>;
+            }
+            // Bold **text**
+            const boldMatch = part.match(/^\*\*(.*?)\*\*$/);
+            if (boldMatch) {
+                return <strong key={i} className="font-bold text-[var(--foreground)]">{boldMatch[1]}</strong>;
+            }
+            // Italic *text*
+            const italicMatch = part.match(/^\*(.*?)\*$/);
+            if (italicMatch) {
+                return <em key={i} className="italic text-[var(--muted-foreground)]">{italicMatch[1]}</em>;
+            }
+            return part;
+        });
+    };
+
+    const MiniTOC = () => (
+        <div className="glass-card p-6 my-8 border-l-4 border-l-[var(--primary)]">
+            <h4 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <Clock className="w-5 h-5 text-[var(--primary)]" /> Jump to Section
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
+                {headings.map((h) => (
+                    <a
+                        key={h.id}
+                        href={`#${h.id}`}
+                        className={`text-sm hover:text-[var(--primary)] transition-colors line-clamp-1 ${h.level === 3 ? "pl-4 text-[var(--muted-foreground)]" : "font-medium"}`}
+                    >
+                        {h.text}
+                    </a>
+                ))}
+            </div>
+        </div>
+    );
+
     const renderMarkdown = (md: string) => {
         return md.split("\n\n").map((block, i) => {
+            if (block.trim() === "[TOC]") {
+                return <MiniTOC key={i} />;
+            }
             if (block.startsWith("### ")) {
                 const text = block.replace("### ", "");
                 const id = text.toLowerCase().replace(/[^a-z0-9]+/g, "-");
@@ -116,7 +162,7 @@ export default function BlogDetailPage() {
                 return (
                     <ul key={i} className="list-disc list-inside space-y-2 my-4 text-[var(--muted-foreground)]">
                         {block.split("\n").map((item, j) => (
-                            <li key={j}>{item.replace(/^- /, "")}</li>
+                            <li key={j}>{parseInlineMarkdown(item.replace(/^- /, ""))}</li>
                         ))}
                     </ul>
                 );
@@ -125,12 +171,12 @@ export default function BlogDetailPage() {
                 return (
                     <ol key={i} className="list-decimal list-inside space-y-2 my-4 text-[var(--muted-foreground)]">
                         {block.split("\n").map((item, j) => (
-                            <li key={j}>{item.replace(/^\d+\.\s/, "")}</li>
+                            <li key={j}>{parseInlineMarkdown(item.replace(/^\d+\.\s/, ""))}</li>
                         ))}
                     </ol>
                 );
             }
-            return <p key={i} className="text-[var(--muted-foreground)] leading-relaxed my-4">{block}</p>;
+            return <p key={i} className="text-[var(--muted-foreground)] leading-relaxed my-4">{parseInlineMarkdown(block)}</p>;
         });
     };
 
@@ -201,7 +247,12 @@ export default function BlogDetailPage() {
                             </div>
 
                             {/* Content */}
-                            <div className="prose-custom">
+                             <div className="prose-custom">
+                                {headings.length > 0 && (
+                                    <div className="lg:hidden mb-8">
+                                        <MiniTOC />
+                                    </div>
+                                )}
                                 {renderMarkdown(blog.content_markdown)}
                             </div>
                         </motion.div>
