@@ -7,7 +7,32 @@ import { tools } from "@/lib/data/tools";
 import { useState, useEffect } from "react";
 
 function TickerTape() {
-  const doubled = [...stocks, ...stocks];
+  const [marketData, setMarketData] = useState(stocks);
+
+  useEffect(() => {
+    const fetchMarketSnapshot = async () => {
+      try {
+        const resp = await fetch('/api/stocks');
+        if (resp.ok) {
+          const data = await resp.json();
+          // Filter to match the structure if needed, but the worker returns what we need
+          if (Array.isArray(data) && data.length > 0) {
+            setMarketData(data);
+          }
+        }
+      } catch (e) {
+        console.error('Error fetching market snapshot:', e);
+      }
+    };
+    fetchMarketSnapshot();
+    
+    // Refresh every minute to keep it "live"
+    const interval = setInterval(fetchMarketSnapshot, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const doubled = [...marketData, ...marketData];
+  
   return (
     <div className="w-full overflow-hidden border-y border-[var(--card-border)] py-3 bg-[var(--surface)]">
       <div className="ticker-tape">
@@ -18,10 +43,10 @@ function TickerTape() {
             className="flex items-center gap-2 px-6 whitespace-nowrap text-sm font-medium hover:opacity-80 transition-opacity"
           >
             <span className="font-bold">{s.ticker}</span>
-            <span>${s.price.toLocaleString()}</span>
-            <span className={`flex items-center gap-0.5 ${s.change >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
-              {s.change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-              {s.change >= 0 ? "+" : ""}{s.change_percent.toFixed(2)}%
+            <span>${(s.price || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span className={`flex items-center gap-0.5 ${(s.change || 0) >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
+              {(s.change || 0) >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+              {(s.change || 0) >= 0 ? "+" : ""}{(s.change_percent || 0).toFixed(2)}%
             </span>
           </Link>
         ))}

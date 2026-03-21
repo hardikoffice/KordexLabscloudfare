@@ -201,53 +201,81 @@ async function syncStockData(env: Bindings) {
     return
   }
 
-  console.log("[Sync] Starting sync for 10 tickers over 30 days...")
+  const now = Math.floor(Date.now() / 1000)
+  const twentyFourHoursAgo = now - 24 * 60 * 60
+
+  console.log("[Sync] Checking for tickers needing update...")
+  
   const to = new Date()
   to.setDate(to.getDate() - 1)
   const from = new Date()
   from.setDate(from.getDate() - 30)
-  
   const fromStr = from.toISOString().split('T')[0]
   const toStr = to.toISOString().split('T')[0]
 
+  let processedInThisRun = 0
+  const MAX_PER_RUN = 3 // Cloudflare Free Tier has limited wall-clock time for crons
+
   for (const ticker of SYNC_TICKERS) {
+    if (processedInThisRun >= MAX_PER_RUN) {
+      console.log("[Sync] Batch limit reached. Remaining tickers will be handled in the next 10-minute cycle.")
+      break
+    }
+
+    // Check if we already have synced this ticker in the last 24h (using metadata)
+    const check = await env.DB.prepare(
+      'SELECT last_sync_time FROM sync_metadata WHERE ticker = ?'
+    ).bind(ticker).first<{ last_sync_time: number }>()
+
+    if (check && check.last_sync_time > twentyFourHoursAgo) {
+      console.log(`[Sync] ${ticker} already synced at ${new Date(check.last_sync_time * 1000).toISOString()}. Skipping.`)
+      continue
+    }
+
     try {
-      console.log(`[Sync] Fetching ${ticker} from ${fromStr} to ${toStr}...`)
+      processedInThisRun++
+      console.log(`[Sync] Fetching ${ticker} (${processedInThisRun}/${MAX_PER_RUN})...`)
       const url = `https://api.polygon.io/v2/aggs/ticker/${ticker}/range/1/day/${fromStr}/${toStr}?adjusted=true&sort=asc&limit=50&apiKey=${apiKey}`
       
       const resp = await fetch(url)
       if (!resp.ok) {
-        console.error(`[Sync] API Error for ${ticker}: HTTP ${resp.status} ${resp.statusText}`)
+        console.error(`[Sync] API Error for ${ticker}: HTTP ${resp.status}`)
         continue
       }
       
       const data: any = await resp.json()
       if (data.status === "OK" && data.results && data.results.length > 0) {
-        console.log(`[Sync] Found ${data.results.length} data points for ${ticker}. Saving to D1...`)
-        let savedCount = 0
-        for (const res of data.results) {
+        console.log(`[Sync] Saving ${data.results.length} points for ${ticker}...`)
+        
+        const priceStmt = env.DB.prepare(
+          'INSERT OR REPLACE INTO stock_prices (ticker, timestamp, open, high, low, close, volume) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        )
+        
+        const metadataStmt = env.DB.prepare(
+          'INSERT OR REPLACE INTO sync_metadata (ticker, last_sync_time) VALUES (?, ?)'
+        ).bind(ticker, now)
+        
+        // Use a batch for both prices and metadata
+        const priceBatch = data.results.map((res: any) => {
           const timestamp = Math.floor(res.t / 1000)
-          try {
-            await env.DB.prepare(
-              'INSERT OR REPLACE INTO stock_prices (ticker, timestamp, open, high, low, close, volume) VALUES (?, ?, ?, ?, ?, ?, ?)'
-            ).bind(ticker, timestamp, res.o, res.h, res.l, res.c, res.v).run()
-            savedCount++
-          } catch (dbErr) {
-            console.error(`[Sync] DB Insert failed for ${ticker} at ${timestamp}:`, dbErr)
-          }
-        }
-        console.log(`[Sync] Successfully saved ${savedCount}/${data.results.length} points for ${ticker}`)
+          return priceStmt.bind(ticker, timestamp, res.o, res.h, res.l, res.c, res.v)
+        })
+        
+        await env.DB.batch([...priceBatch, metadataStmt])
+        console.log(`[Sync] Successfully saved ${ticker} and updated metadata.`)
       } else {
-        console.warn(`[Sync] No data for ${ticker}. Polygon Status: ${data.status || 'Unknown'}. Info: ${data.error || 'None'}`)
+        console.warn(`[Sync] Polygon returned no results for ${ticker} (${data.status}). Updating metadata anyway.`)
+        await env.DB.prepare(
+          'INSERT OR REPLACE INTO sync_metadata (ticker, last_sync_time) VALUES (?, ?)'
+        ).bind(ticker, now).run()
       }
       
-      console.log(`[Sync] Waiting 12s for rate limits...`)
+      // Delay (12s) to stay within 5 requests/minute free plan
       await new Promise(r => setTimeout(r, 12000))
     } catch (e) {
       console.error(`[Sync] Fatal error for ${ticker}:`, e)
     }
   }
-  console.log("[Sync] All tickers processed.")
 }
 
 app.get('/api/stocks/sync', async (c) => {
@@ -345,7 +373,7 @@ const TOOLS = [
   {id:"4", name:"GitHub Copilot", category:"Code Assistant", pros:["Deep IDE integration", "Multi-language support"], cons:["Subscription required", "Can suggest insecure code"], pricing_tier:"$10/mo Individual", logo_url:""},
 ]
 
-app.get('/api/stocks', (c) => c.json(STOCKS))
+// app.get('/api/stocks', (c) => c.json(STOCKS))
 app.get('/api/tools', (c) => c.json(TOOLS))
 app.get('/api/tools/matrix', (c) => {
   const compare = c.req.query('compare')
