@@ -202,7 +202,7 @@ async function syncStockData(env: Bindings) {
   }
 
   const now = Math.floor(Date.now() / 1000)
-  const twentyFourHoursAgo = now - 24 * 60 * 60
+  const oneHourAgo = now - 60 * 60
 
   console.log("[Sync] Checking for tickers needing update...")
   
@@ -227,7 +227,7 @@ async function syncStockData(env: Bindings) {
       'SELECT last_sync_time FROM sync_metadata WHERE ticker = ?'
     ).bind(ticker).first<{ last_sync_time: number }>()
 
-    if (check && check.last_sync_time > twentyFourHoursAgo) {
+    if (check && check.last_sync_time > oneHourAgo) {
       console.log(`[Sync] ${ticker} already synced at ${new Date(check.last_sync_time * 1000).toISOString()}. Skipping.`)
       continue
     }

@@ -20,4 +20,4 @@ bucket_name = "kordexlabs-images"
 ENVIRONMENT = "local"
 
 [triggers]
-crons = ["0 8 * * *"] # 8 AM UTC
+crons = ["0,10,20,30,40,50 2,8,17,20,23 * * *"] # 2AM, 8AM, 5PM, 8PM, 11PM (and 50m following each to ensure all 10 tickers sync)
