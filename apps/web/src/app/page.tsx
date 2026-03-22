@@ -5,6 +5,7 @@ import Link from "next/link";
 import { stocks } from "@/lib/data/stocks";
 import { tools } from "@/lib/data/tools";
 import { useState, useEffect } from "react";
+import { MarketCard } from "@/components/markets/MarketCard";
 
 function TickerTape() {
   const [marketData, setMarketData] = useState(stocks);
@@ -107,6 +108,73 @@ function HeroSection() {
             </Link>
           </div>
         </motion.div>
+      </div>
+    </section>
+  );
+}
+
+function MarketHighlights() {
+  const [marketData, setMarketData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMarketSnapshot = async () => {
+      try {
+        const resp = await fetch('/api/stocks');
+        if (resp.ok) {
+          const data = await resp.json();
+          if (Array.isArray(data)) {
+            // Pick two prominent ones (e.g., NVDA, MSFT if they exist, else first two)
+            const sorted = [...data].sort((a, b) => (b.price * b.change_percent) - (a.price * a.change_percent));
+            setMarketData(sorted.slice(0, 2));
+          }
+        }
+      } catch (e) {
+        console.error('Error fetching market snapshot:', e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMarketSnapshot();
+  }, []);
+
+  return (
+    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+            <TrendingUp className="w-6 h-6 text-[var(--success)]" /> Market Highlights
+          </h2>
+          <p className="text-[var(--muted-foreground)] mt-1">Real-time AI sector performance</p>
+        </div>
+        <Link href="/markets" className="text-sm text-[var(--primary)] hover:underline flex items-center gap-1">
+          Explore Markets <ArrowUpRight className="w-4 h-4" />
+        </Link>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {loading ? (
+          [0, 1].map((i) => (
+            <div key={i} className="glass-card p-6 h-32 animate-pulse bg-[var(--surface)]" />
+          ))
+        ) : (
+          marketData.map((s, i) => (
+            <MarketCard 
+              key={s.ticker} 
+              ticker={s.ticker} 
+              name={s.company_name} 
+              exchange={s.exchange} 
+              index={i}
+              loading={false}
+              stats={{
+                latest: s.price,
+                change: s.change,
+                changePercent: s.change_percent,
+                history: s.history
+              }}
+            />
+          ))
+        )}
       </div>
     </section>
   );
@@ -245,6 +313,7 @@ export default function HomePage() {
     <>
       <HeroSection />
       <TickerTape />
+      <MarketHighlights />
       <TrendingBlogs />
       <ToolOfTheWeek />
       <Testimonials />
