@@ -1,3 +1,4 @@
+# node_modules/
 node_modules/
 .next/
 out/
@@ -5,15 +6,6 @@ dist/
 .env
 .env*
 !.env.example
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
-.venv/
-kordexlabs.db
 .wrangler/
 .vscode/
 .idea/
