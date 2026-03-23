@@ -9,6 +9,7 @@ type Bindings = {
   IMAGES: R2Bucket
   JWT_SECRET: string
   POLYGON_API_KEY: string
+  RESEND_API_KEY: string
   PUBLIC_BUCKET_URL?: string
 }
 
@@ -41,6 +42,42 @@ const authMiddleware = async (c: any, next: any) => {
 app.get('/', (c) => c.text('KordexLabs API (Hono Worker) is running!'))
 app.get('/health', (c) => c.json({ status: 'ok', stack: 'Cloudflare Workers + Hono' }))
 
+// --- Email Helper (Resend) ---
+async function sendOTPEmail(env: Bindings, email: string, otp: string) {
+  if (!env.RESEND_API_KEY) {
+    console.warn("[Auth] RESEND_API_KEY is missing. OTP for " + email + " is: " + otp);
+    return;
+  }
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'KordexLabs <onboarding@resend.dev>',
+      to: [email],
+      subject: 'Verify your KordexLabs Account',
+      html: `
+        <div style="font-family: sans-serif; background: #0a0a0a; color: #fff; padding: 40px; border-radius: 12px;">
+          <h1 style="color: #6366f1;">Welcome to KordexLabs!</h1>
+          <p>Your verification code is:</p>
+          <div style="font-size: 32px; font-weight: bold; letter-spacing: 4px; padding: 20px; background: #1a1a1a; display: inline-block; border-radius: 8px;">
+            ${otp}
+          </div>
+          <p style="color: #94a3b8; font-size: 14px; margin-top: 20px;">This code expires in 10 minutes.</p>
+        </div>
+      `,
+    }),
+  });
+
+  if (!res.ok) {
+    const error = await res.text();
+    console.error("[Auth] Resend Email Error:", error);
+  }
+}
+
 // --- Auth Routes ---
 app.post('/api/auth/signup', async (c) => {
   const { email, password, full_name } = await c.req.json()
@@ -49,11 +86,39 @@ app.post('/api/auth/signup', async (c) => {
   if (existing) return c.json({ error: 'Email already registered' }, 400)
 
   const hashedPassword = await hashPassword(password)
-  const result = await c.env.DB.prepare(
-    'INSERT INTO users (email, hashed_password, full_name) VALUES (?, ?, ?) RETURNING id, email, full_name'
-  ).bind(email, hashedPassword, full_name).first()
+  const otp = Math.floor(100000 + Math.random() * 900000).toString()
+  const otpExpires = Math.floor(Date.now() / 1000) + 10 * 60 // 10 minutes
 
-  return c.json(result)
+  await c.env.DB.prepare(
+    'INSERT INTO users (email, hashed_password, full_name, is_active, otp_code, otp_expires_at) VALUES (?, ?, ?, ?, ?, ?)'
+  ).bind(email, hashedPassword, full_name, 0, otp, otpExpires).run()
+
+  // Send Email (Don't await, send in background)
+  c.executionCtx.waitUntil(sendOTPEmail(c.env, email, otp))
+
+  return c.json({ message: 'OTP sent to email', email })
+})
+
+app.post('/api/auth/verify-otp', async (c) => {
+  const { email, otp } = await c.req.json()
+  
+  const user = await c.env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(email).first<any>()
+  if (!user) return c.json({ error: 'User not found' }, 404)
+  if (user.is_active) return c.json({ error: 'User already verified' }, 400)
+
+  if (user.otp_code !== otp) {
+    return c.json({ error: 'Invalid OTP code' }, 400)
+  }
+
+  const now = Math.floor(Date.now() / 1000)
+  if (user.otp_expires_at < now) {
+    return c.json({ error: 'OTP has expired' }, 400)
+  }
+
+  await c.env.DB.prepare('UPDATE users SET is_active = 1, otp_code = NULL, otp_expires_at = NULL WHERE id = ?')
+    .bind(user.id).run()
+
+  return c.json({ message: 'Account verified successfully' })
 })
 
 app.post('/api/auth/login', async (c) => {
@@ -62,6 +127,10 @@ app.post('/api/auth/login', async (c) => {
 
   if (!user || !(await verifyPassword(password, user.hashed_password))) {
     return c.json({ error: 'Incorrect email or password' }, 401)
+  }
+
+  if (!user.is_active) {
+    return c.json({ error: 'Account not verified. Please verify your email first.' }, 403)
   }
 
   const payload = {
@@ -73,7 +142,7 @@ app.post('/api/auth/login', async (c) => {
 })
 
 app.get('/api/auth/me', authMiddleware, async (c) => {
-  const payload = c.get('jwtPayload')
+  const payload = c.get('jwtPayload') as any
   const user = await c.env.DB.prepare('SELECT id, email, full_name, is_active FROM users WHERE email = ?').bind(payload.sub).first()
   return c.json(user)
 })
@@ -120,7 +189,7 @@ app.delete('/api/blogs/:id', async (c) => {
 
 // --- Favorites Routes ---
 app.get('/api/favorites', authMiddleware, async (c) => {
-  const payload = c.get('jwtPayload')
+  const payload = c.get('jwtPayload') as any
   const { results } = await c.env.DB.prepare(
     'SELECT f.id, f.ticker FROM user_favorites f JOIN users u ON f.user_id = u.id WHERE u.email = ?'
   ).bind(payload.sub).all()
@@ -128,7 +197,7 @@ app.get('/api/favorites', authMiddleware, async (c) => {
 })
 
 app.post('/api/favorites', authMiddleware, async (c) => {
-  const payload = c.get('jwtPayload')
+  const payload = c.get('jwtPayload') as any
   const { ticker } = await c.req.json()
   
   const user = await c.env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(payload.sub).first<any>()
@@ -145,7 +214,7 @@ app.post('/api/favorites', authMiddleware, async (c) => {
 })
 
 app.delete('/api/favorites/:ticker', authMiddleware, async (c) => {
-  const payload = c.get('jwtPayload')
+  const payload = c.get('jwtPayload') as any
   const ticker = c.req.param('ticker')
   const user = await c.env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(payload.sub).first<any>()
   
@@ -157,7 +226,7 @@ app.delete('/api/favorites/:ticker', authMiddleware, async (c) => {
 
 // --- Saved Blogs Routes ---
 app.get('/api/saved-blogs', authMiddleware, async (c) => {
-  const payload = c.get('jwtPayload')
+  const payload = c.get('jwtPayload') as any
   const { results } = await c.env.DB.prepare(
     'SELECT s.id, s.blog_id FROM user_saved_blogs s JOIN users u ON s.user_id = u.id WHERE u.email = ?'
   ).bind(payload.sub).all()
@@ -165,7 +234,7 @@ app.get('/api/saved-blogs', authMiddleware, async (c) => {
 })
 
 app.post('/api/saved-blogs', authMiddleware, async (c) => {
-  const payload = c.get('jwtPayload')
+  const payload = c.get('jwtPayload') as any
   const { blog_id } = await c.req.json()
   const user = await c.env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(payload.sub).first<any>()
   
@@ -181,7 +250,7 @@ app.post('/api/saved-blogs', authMiddleware, async (c) => {
 })
 
 app.delete('/api/saved-blogs/:blog_id', authMiddleware, async (c) => {
-  const payload = c.get('jwtPayload')
+  const payload = c.get('jwtPayload') as any
   const blog_id = c.req.param('blog_id')
   const user = await c.env.DB.prepare('SELECT id FROM users WHERE email = ?').bind(payload.sub).first<any>()
   

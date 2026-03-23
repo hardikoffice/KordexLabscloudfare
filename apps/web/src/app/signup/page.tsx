@@ -11,9 +11,11 @@ import Image from "next/image";
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787/api";
 
 function SignupContent() {
+    const [step, setStep] = useState<"signup" | "verify">("signup");
     const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [otp, setOtp] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const router = useRouter();
@@ -43,10 +45,37 @@ function SignupContent() {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.detail || "Signup failed");
+                throw new Error(data.error || data.detail || "Signup failed");
             }
 
-            // Automatically login after signup
+            // OTP sent, switch to verify step
+            setStep("verify");
+        } catch (err: any) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleVerifyOtp = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError("");
+
+        try {
+            const response = await fetch(`${API_URL}/auth/verify-otp`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, otp }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Verification failed");
+            }
+
+            // Automatically login after verification
             const loginResponse = await fetch(`${API_URL}/auth/login`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -55,7 +84,13 @@ function SignupContent() {
 
             const loginData = await loginResponse.json();
             if (loginResponse.ok) {
-                login(data, loginData.access_token);
+                // Fetch full user data to get the ID
+                const meResponse = await fetch(`${API_URL}/auth/me`, {
+                    headers: { "Authorization": `Bearer ${loginData.access_token}` }
+                });
+                const meData = await meResponse.json();
+                
+                login(meData, loginData.access_token);
                 router.push(callback);
             } else {
                 router.push(`/login?callback=${callback}`);
@@ -91,82 +126,137 @@ function SignupContent() {
                             />
                         </div>
                         <h1 className="text-3xl font-extrabold mb-2 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-                            Join KordexLabs
+                            {step === "signup" ? "Join KordexLabs" : "Verify Email"}
                         </h1>
-                        <p className="text-[var(--muted-foreground)]">Start your AI journey today</p>
+                        <p className="text-[var(--muted-foreground)]">
+                            {step === "signup" ? "Start your AI journey today" : `Code sent to ${email}`}
+                        </p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {error && (
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm"
-                            >
-                                {error}
-                            </motion.div>
-                        )}
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-300 ml-1">Full Name</label>
-                            <div className="relative group">
-                                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-[var(--primary)] transition-colors" />
-                                <input
-                                    type="text"
-                                    required
-                                    value={fullName}
-                                    onChange={(e) => setFullName(e.target.value)}
-                                    placeholder="John Doe"
-                                    className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl py-3 pl-12 pr-4 text-gray-200 outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] transition-all"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-300 ml-1">Email Address</label>
-                            <div className="relative group">
-                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-[var(--primary)] transition-colors" />
-                                <input
-                                    type="email"
-                                    required
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="name@example.com"
-                                    className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl py-3 pl-12 pr-4 text-gray-200 outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] transition-all"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-300 ml-1">Password</label>
-                            <div className="relative group">
-                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-[var(--primary)] transition-colors" />
-                                <input
-                                    type="password"
-                                    required
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                    className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl py-3 pl-12 pr-4 text-gray-200 outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] transition-all"
-                                />
-                            </div>
-                        </div>
-
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full py-4 rounded-xl bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] font-bold text-white shadow-lg hover:shadow-[var(--primary)]/25 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group disabled:opacity-70 disabled:hover:scale-100"
-                        >
-                            {loading ? (
-                                <Loader2 className="w-5 h-5 animate-spin" />
-                            ) : (
-                                <>
-                                    Create Account
-                                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                                </>
+                    {step === "signup" ? (
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            {error && (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm"
+                                >
+                                    {error}
+                                </motion.div>
                             )}
-                        </button>
-                    </form>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-300 ml-1">Full Name</label>
+                                <div className="relative group">
+                                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-[var(--primary)] transition-colors" />
+                                    <input
+                                        type="text"
+                                        required
+                                        value={fullName}
+                                        onChange={(e) => setFullName(e.target.value)}
+                                        placeholder="John Doe"
+                                        className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl py-3 pl-12 pr-4 text-gray-200 outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] transition-all"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-300 ml-1">Email Address</label>
+                                <div className="relative group">
+                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-[var(--primary)] transition-colors" />
+                                    <input
+                                        type="email"
+                                        required
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        placeholder="name@example.com"
+                                        className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl py-3 pl-12 pr-4 text-gray-200 outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] transition-all"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-300 ml-1">Password</label>
+                                <div className="relative group">
+                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-[var(--primary)] transition-colors" />
+                                    <input
+                                        type="password"
+                                        required
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="••••••••"
+                                        className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl py-3 pl-12 pr-4 text-gray-200 outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] transition-all"
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full py-4 rounded-xl bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] font-bold text-white shadow-lg hover:shadow-[var(--primary)]/25 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group disabled:opacity-70 disabled:hover:scale-100"
+                            >
+                                {loading ? (
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : (
+                                    <>
+                                        Create Account
+                                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                    </>
+                                )}
+                            </button>
+                        </form>
+                    ) : (
+                        <form onSubmit={handleVerifyOtp} className="space-y-6">
+                            {error && (
+                                <motion.div
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm"
+                                >
+                                    {error}
+                                </motion.div>
+                            )}
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-300 ml-1">Enter 6-digit Code</label>
+                                <div className="relative group">
+                                    <Sparkles className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 group-focus-within:text-[var(--primary)] transition-colors" />
+                                    <input
+                                        type="text"
+                                        required
+                                        maxLength={6}
+                                        value={otp}
+                                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                                        placeholder="123456"
+                                        className="w-full bg-[var(--surface)] border border-[var(--card-border)] rounded-xl py-3 pl-12 pr-4 text-gray-200 outline-none focus:ring-2 focus:ring-[var(--primary)]/20 focus:border-[var(--primary)] text-center text-2xl tracking-[0.5em] font-mono transition-all"
+                                    />
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full py-4 rounded-xl bg-gradient-to-r from-[var(--primary)] to-[var(--accent)] font-bold text-white shadow-lg hover:shadow-[var(--primary)]/25 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group disabled:opacity-70 disabled:hover:scale-100"
+                            >
+                                {loading ? (
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : (
+                                    <>
+                                        Verify & Complete
+                                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                    </>
+                                )}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setStep("signup")}
+                                className="w-full text-center text-sm text-gray-500 hover:text-gray-300 transition-colors"
+                            >
+                                Back to Sign Up
+                            </button>
+                        </form>
+                    )}
 
                     <p className="text-center mt-8 text-sm text-[var(--muted-foreground)]">
                         Already have an account?{" "}
